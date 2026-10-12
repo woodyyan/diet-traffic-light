@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const src = path.join(__dirname, "src");
-const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "dishes.js", "app.js"];
+const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "dishes.js", "packs.js", "app.js"];
 const js = files.map((f) => fs.readFileSync(path.join(src, f), "utf8")).join("\n");
 
 function el(id) {

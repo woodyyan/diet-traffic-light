@@ -108,24 +108,38 @@
   }
 
   // 「做法 + 食材」自动拆解：莴笋炒肉 → 莴笋 + 猪肉 + 炒制
+  // 做法词取最长命中，"粉蒸"不会被"蒸"抢走
+  function cookOf(q) {
+    if (!window.COOKS) return null;
+    var best = null, bw = "";
+    window.COOKS.forEach(function (c) {
+      c.k.split(",").forEach(function (w) {
+        if (w && q.indexOf(w) >= 0 && w.length > bw.length) { best = c; bw = w; }
+      });
+    });
+    return best ? { cook: best, word: bw } : null;
+  }
+
   function compose(q) {
     if (!window.COOKS || !window.MAINS) return null;
-    var cook = null, rest = q, i, j;
-    for (i = 0; i < window.COOKS.length && !cook; i++) {
-      var ks = window.COOKS[i].k.split(",");
-      for (j = 0; j < ks.length; j++) {
-        if (q.indexOf(ks[j]) >= 0) { cook = window.COOKS[i]; rest = q.split(ks[j]).join(""); break; }
-      }
-    }
+    var hit = cookOf(q);
+    var cook = hit ? hit.cook : null;
+    var rest = hit ? q.split(hit.word).join("") : q;
     if (!window.MAINS_SORTED) {
       window.MAINS_SORTED = window.MAINS.slice().sort(function (a, b) { return b.length - a.length; });
     }
-    var found = [], pool = rest;
+    var found = [], pool = rest, i;
     for (i = 0; i < window.MAINS_SORTED.length && found.length < 3; i++) {
       var w = window.MAINS_SORTED[i];
       if (pool.indexOf(w) >= 0) { found.push(w); pool = pool.split(w).join(""); }
     }
+    // 主料词被做法词吃掉的情况（如"回锅肉"只剩"肉"）
+    if (!found.length) { pool = q; for (i = 0; i < window.MAINS_SORTED.length && found.length < 3; i++) {
+      var w2 = window.MAINS_SORTED[i];
+      if (pool.indexOf(w2) >= 0) { found.push(w2); pool = pool.split(w2).join(""); }
+    } }
     if (!found.length) return null;
+
     var base = [0, 0, 0, 0, 0], parts = [];
     found.forEach(function (word) {
       var r = search(word)[0];
@@ -134,11 +148,35 @@
       for (var k = 0; k < 5; k++) base[k] = Math.max(base[k], r.lv[k] || 0);
     });
     if (!parts.length) return null;
+
+    var meaty = base[0] >= 1; // 主料里有没有中高嘌呤的东西
+    var tip = "按下面每一项分别控制";
     if (cook) {
-      parts.push({ n: "做法：" + cook.n, lv: cook.lv, s: "", t: cook.t });
-      for (var k2 = 0; k2 < 5; k2++) base[k2] = Math.max(base[k2], cook.lv[k2] || 0);
+      var clv = window.cookLv(cook).slice();
+      var ct = cook.t;
+      if (cook.soup) {
+        if (meaty) { clv[0] = 2; ct = "肉可以吃，汤一口别碰——嘌呤和浮油都溶进汤里了"; }
+        else { ct = "素汤可以喝，少放盐和油"; }
+      }
+      parts.push({ n: "做法：" + cook.n, lv: clv, s: "", t: ct });
+      for (var k2 = 0; k2 < 5; k2++) base[k2] = Math.max(base[k2], clv[k2] || 0);
+      tip = ct;
     }
-    return { n: q, c: "做法 + 食材自动拆解", lv: base, s: "按下面每一项分别控制", t: cook ? cook.t : "按食材分别看份量", parts: parts };
+    return { n: q, c: "做法 + 食材自动拆解", lv: base, s: "按下面每一项分别控制", t: tip, parts: parts };
+  }
+
+  function brandHit(q) {
+    if (!window.BRANDS) return null;
+    for (var i = 0; i < window.BRANDS.length; i++) {
+      var ks = window.BRANDS[i].k.split(",");
+      for (var j = 0; j < ks.length; j++) {
+        if (q.indexOf(ks[j]) >= 0) {
+          var b = window.BRANDS[i];
+          return { n: q, c: b.n, lv: b.lv, f: b.f, s: b.s, t: b.t, alt: b.alt, pack: true };
+        }
+      }
+    }
+    return null;
   }
 
   function catFallback(q) {
@@ -216,8 +254,57 @@
     }
     if (f.t) html += '<div class="sec-t">关键提醒</div><div class="note">' + esc(f.t) + '</div>';
     if (f.alt) html += '<div class="sec-t">换成什么</div><div class="note alt">' + esc(f.alt) + '</div>';
+    if (f.pack) html += '<button class="chip" id="packbtn" style="margin-top:12px">手边有包装？翻背面三个数算得更准</button>';
     html += '</div>';
     return html;
+  }
+
+  // ---------- 包装食品：按营养成分表判定 ----------
+  function bindPack(q) {
+    var pb = $("packbtn");
+    if (pb) pb.onclick = function () { openPack(q); };
+  }
+
+  function openPack(q) {
+    var body = $("packbody");
+    if (!body) return;
+    body.style.display = "block";
+    var lbl = $("packname");
+    if (lbl && q) lbl.textContent = "正在看：" + q;
+    var sat = $("satIn");
+    if (sat && !sat.value) sat.focus();
+    renderPack();
+    if (body.scrollIntoView) body.scrollIntoView({ block: "center" });
+  }
+
+  function renderPack() {
+    var out = $("packout");
+    if (!out) return;
+    var sat = parseFloat($("satIn").value), sug = parseFloat($("sugIn").value), na = parseFloat($("naIn").value);
+    var meaty = $("meatIn") && $("meatIn").checked;
+    if (isNaN(sat) && isNaN(sug) && isNaN(na)) {
+      out.innerHTML = '<div class="note">填任意一项就能算。拿不准就填饱和脂肪和糖这两项。</div>';
+      return;
+    }
+    sat = isNaN(sat) ? 0 : sat; sug = isNaN(sug) ? 0 : sug; na = isNaN(na) ? 0 : na;
+    var a = window.packAxes(sat, sug, na, meaty);
+    var l = levelOf(a);
+    var v = VERDICT[l];
+    var why = [];
+    if (a.chol === 2) why.push("饱和脂肪 " + sat + " g/100 g，超过上限（> 5 g）");
+    else if (a.chol === 1) why.push("饱和脂肪 " + sat + " g/100 g，中等偏高（> 1.5 g）");
+    if (a.tg === 2) why.push("糖 " + sug + " g/100 g，超过上限（> 15 g）");
+    else if (a.tg === 1) why.push("糖 " + sug + " g/100 g，中等偏高（> 5 g）");
+    if (a.na === 2) why.push("钠 " + na + " mg/100 g，超过上限（> 800 mg）");
+    else if (a.na === 1) why.push("钠 " + na + " mg/100 g，中等偏高（> 400 mg）");
+    if (meaty) why.push("配料里有肉粉 / 海鲜 / 酵母提取物，嘌呤要按中等算");
+    if (!why.length) why.push("三项都在安全区，可以放心吃");
+    var amount = l === 2 ? "实在要吃 ≤ 20 g" : l === 1 ? "一次 30 g 以内" : "一次 50 g 以内";
+    out.innerHTML = '<div class="verdict" style="background:' + v.b + ';margin-bottom:10px">' +
+      '<span class="dot big" style="background:' + LV_FILL[l] + '"></span><div>' +
+      '<div class="verdict-t" style="color:' + v.c + '">' + v.t + '　·　' + amount + '</div>' +
+      '<div class="verdict-s" style="color:' + v.c + '">' + why[0] + '</div></div></div>' +
+      '<ul class="why">' + why.map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("") + '</ul>';
   }
 
   function noHit(q) {
@@ -258,6 +345,8 @@
     if (res.length === 0) {
       var comp = compose(q);
       if (comp) { box.innerHTML = card(comp, { approx: true, approxName: q, approxLabel: "做法 + 食材自动拆解" }); bindCatPick(q); return; }
+      var br = brandHit(q);
+      if (br) { box.innerHTML = card(br, { approx: true, approxName: q, approxLabel: br.c }); bindPack(q); return; }
       var cf = catFallback(q);
       if (cf) { box.innerHTML = card(cf, { approx: true, approxName: q }); bindCatPick(q); return; }
       box.innerHTML = noHit(q); bindCatPick(q); return;
@@ -378,6 +467,18 @@
       };
     });
     updateHeader();
+    var pt = $("packtoggle");
+    if (pt) pt.onclick = function () {
+      var b = $("packbody");
+      if (b) b.style.display = b.style.display === "block" ? "none" : "block";
+    };
+    ["satIn", "sugIn", "naIn"].forEach(function (id) {
+      var el = $(id);
+      if (el) el.addEventListener("input", renderPack);
+    });
+    var mi = $("meatIn");
+    if (mi) mi.onchange = renderPack;
+    renderPack();
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
     }
@@ -389,7 +490,7 @@
     });
   }
 
-  window.__HF = { search: search, catFallback: catFallback, compose: compose, axesOf: axesOf, levelOf: levelOf, buildIndex: buildIndex, card: card, renderQuery: renderQuery, init: init, VERDICT: VERDICT };
+  window.__HF = { search: search, catFallback: catFallback, compose: compose, brandHit: brandHit, cookOf: cookOf, axesOf: axesOf, levelOf: levelOf, buildIndex: buildIndex, card: card, renderQuery: renderQuery, renderPack: renderPack, init: init, VERDICT: VERDICT };
 
   window.addEventListener("DOMContentLoaded", init);
 })();

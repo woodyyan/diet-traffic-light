@@ -3,7 +3,7 @@ const path = require("path");
 
 const src = path.join(__dirname, "src");
 const dist = path.join(__dirname, "dist");
-const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "dishes.js", "app.js"];
+const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "dishes.js", "packs.js", "app.js"];
 
 if (!fs.existsSync(dist)) fs.mkdirSync(dist, { recursive: true });
 
