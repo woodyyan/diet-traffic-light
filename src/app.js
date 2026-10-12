@@ -10,8 +10,11 @@
     { t: "不建议吃", c: "#791F1F", b: "#FCEBEB", tip: "对你的三项指标有明显负担，忍一下" }
   ];
 
-  var PROFILE_DEFAULT = { ua: 460, ldl: 3.36, tg: 1.64, mode: "standard" };
-  var profile = load("hf-profile", PROFILE_DEFAULT);
+  // 默认用通用上限值，不含任何个人数据；用户可在设置里填自己的数值，只存本机
+  var LIMIT = { ua: 420, ldl: 3.4, tg: 1.7 };
+  var PROFILE_DEFAULT = { ua: LIMIT.ua, ldl: LIMIT.ldl, tg: LIMIT.tg, mode: "standard", custom: false };
+  var stored = load("hf-profile", {});
+  var profile = { ua: stored.ua || PROFILE_DEFAULT.ua, ldl: stored.ldl || PROFILE_DEFAULT.ldl, tg: stored.tg || PROFILE_DEFAULT.tg, mode: stored.mode || "standard", custom: !!stored.custom };
   var custom = load("hf-custom", {});
 
   function load(k, d) {
@@ -56,11 +59,18 @@
 
   function axisLabel(a) {
     return [
-      { k: "血尿酸", v: a.ua, sub: profile.ua + " μmol/L", w: "UA" },
-      { k: "坏胆固醇 LDL", v: a.chol, sub: profile.ldl + " mmol/L", w: "LDL" },
-      { k: "甘油三酯", v: a.tg, sub: profile.tg + " mmol/L", w: "TG" }
+      { k: "血尿酸", v: a.ua, sub: fmt("ua"), w: "UA" },
+      { k: "坏胆固醇 LDL", v: a.chol, sub: fmt("ldl"), w: "LDL" },
+      { k: "甘油三酯", v: a.tg, sub: fmt("tg"), w: "TG" }
     ];
   }
+
+  var UNIT = { ua: " μmol/L", ldl: " mmol/L", tg: " mmol/L" };
+  function fmt(k) {
+    var v = profile[k];
+    return (profile.custom ? "你 " : "上限 ") + v + UNIT[k];
+  }
+  function over(k) { return profile[k] >= LIMIT[k]; }
 
   // ---------- 搜索 ----------
   var INDEX = [];
@@ -242,16 +252,42 @@
 
   var QUICK = ["牛肉面", "火锅", "辣条", "鸡蛋", "啤酒", "水果", "米饭", "炒菜", "豆腐", "虾", "牛奶", "串串"];
 
+  function metric(label, k) {
+    var v = profile[k];
+    var o = over(k);
+    return '<div class="metric"><div class="m-l">' + label + '</div>' +
+      '<div class="m-v">' + v + '</div>' +
+      '<div class="m-s" style="color:' + (o ? "#A32D2D" : "#3B6D11") + '">' +
+      (profile.custom ? (o ? "偏高" : "达标") : "上限") + '，上限 ' + LIMIT[k] + '</div></div>';
+  }
+
+  function summary() {
+    if (!profile.custom) return "填上自己的数值后，这里会显示达标情况，每条食物的三条轴也会标上你的实测值。";
+    var overs = [];
+    if (over("ua")) overs.push("尿酸");
+    if (over("ldl")) overs.push("LDL");
+    if (over("tg")) overs.push("甘油三酯");
+    if (!overs.length) return "三项都在标准内，继续保持：少酒、少糖、少内脏和浓汤。";
+    return overs.join("、") + " 偏高，饮食控制是最直接有效的手段。尿酸偏高时，酒、内脏、贝类和浓汤是优先级最高的禁区。";
+  }
+
+  function updateHeader() {
+    var el = $("hdr");
+    if (!el) return;
+    el.textContent = "UA " + profile.ua + " · LDL " + profile.ldl + " · TG " + profile.tg + "　" +
+      (profile.custom ? "能不能吃、吃多少、为什么" : "点 ≡ 填入你的体检数值");
+  }
+
   function emptyState() {
     return '<div class="card result empty">' +
       '<div class="verdict" style="background:#E6F1FB"><span class="dot big" style="background:#378ADD"></span><div>' +
       '<div class="verdict-t" style="color:#0C447C">输入食物名，立刻告诉你能不能吃</div>' +
       '<div class="verdict-s" style="color:#185FA5">支持中文名、别名、拼音首字母，比如「nrM」也能搜到牛肉面</div></div></div>' +
-      '<div class="sec-t">你的指标</div><div class="metrics">' +
-      '<div class="metric"><div class="m-l">血尿酸 UA</div><div class="m-v">460</div><div class="m-s">偏高，上限 420</div></div>' +
-      '<div class="metric"><div class="m-l">坏胆固醇 LDL</div><div class="m-v">3.36</div><div class="m-s">临界，上限 3.4</div></div>' +
-      '<div class="metric"><div class="m-l">甘油三酯 TG</div><div class="m-v">1.64</div><div class="m-s">临界，上限 1.7</div></div>' +
-      '</div><div class="note">三项都在临界或超标，饮食控制是最直接有效的手段。尿酸是其中最紧的一条。</div>' +
+      (profile.custom ? '' :
+        '<div class="guide">先在右上角 ≡ 里填入你的体检三项数值，判定会按你的实际情况显示。不填也能用，默认按通用上限值判断。数值只存在你这台设备上。</div>') +
+      '<div class="sec-t">' + (profile.custom ? "你的指标" : "通用参考上限") + '</div><div class="metrics">' +
+      metric("血尿酸 UA", "ua") + metric("坏胆固醇 LDL", "ldl") + metric("甘油三酯 TG", "tg") +
+      '</div><div class="note">' + summary() + '</div>' +
       '<div class="sec-t">点一下试试</div><div class="quick">' +
       QUICK.map(function (q) { return '<button class="chip" data-q="' + q + '">' + q + '</button>'; }).join("") +
       '</div></div>';
@@ -269,6 +305,21 @@
     $("closebtn").onclick = function () { $("sheet").classList.remove("show"); };
     $("modesel").value = profile.mode;
     $("modesel").onchange = function () { profile.mode = this.value; save("hf-profile", profile); renderQuery($("q").value.trim()); };
+    ["ua", "ldl", "tg"].forEach(function (k) {
+      var el = $(k + "In");
+      if (!el) return;
+      el.value = profile[k];
+      el.onchange = function () {
+        var v = parseFloat(this.value);
+        if (isNaN(v)) { this.value = profile[k]; return; }
+        profile[k] = v;
+        profile.custom = true;
+        save("hf-profile", profile);
+        updateHeader();
+        renderQuery($("q").value.trim());
+      };
+    });
+    updateHeader();
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
     }

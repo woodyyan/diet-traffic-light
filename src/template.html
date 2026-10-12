@@ -73,6 +73,8 @@ input#q:focus{border-color:#378ADD}
 .sh-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:.5px solid #E5E5EA;font-size:14px}
 select{border:.5px solid #D2D2D7;border-radius:8px;padding:6px 8px;font-size:14px;background:#fff;color:#1D1D1F}
 .disclaim{font-size:12px;color:#86868B;margin-top:12px;line-height:1.7}
+.num{width:90px;text-align:right;border:.5px solid #D2D2D7;border-radius:8px;padding:6px 8px;font-size:14px;background:#fff;color:#1D1D1F}
+.guide{font-size:13px;color:#0C447C;background:#E6F1FB;border-radius:10px;padding:10px 12px;margin-bottom:12px}
 .cl-btn{background:#fff;border:.5px solid #D2D2D7;border-radius:10px;padding:8px 14px;font-size:14px;cursor:pointer;margin-top:10px}
 footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-height:1.7}
 </style>
@@ -88,10 +90,12 @@ footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-he
         <option value="loose">宽松</option>
       </select>
     </div>
-    <div class="sh-row"><span>血尿酸 UA</span><span>460 μmol/L · 偏高</span></div>
-    <div class="sh-row"><span>坏胆固醇 LDL</span><span>3.36 mmol/L · 临界</span></div>
-    <div class="sh-row"><span>甘油三酯 TG</span><span>1.64 mmol/L · 临界</span></div>
+    <div class="sh-row"><span>血尿酸 UA（μmol/L）</span><input class="num" id="uaIn" type="number" step="1" inputmode="decimal"></div>
+    <div class="sh-row"><span>坏胆固醇 LDL（mmol/L）</span><input class="num" id="ldlIn" type="number" step="0.01" inputmode="decimal"></div>
+    <div class="sh-row"><span>甘油三酯 TG（mmol/L）</span><input class="num" id="tgIn" type="number" step="0.01" inputmode="decimal"></div>
     <div class="disclaim">
+      参考上限：UA 420 μmol/L、LDL 3.4 mmol/L、TG 1.7 mmol/L。填了数值后，每条食物的三条轴会标上你的实测值。<br>
+      这些数值和你的查询记录都只存在这台设备上，不上传、不同步。<br>
       判定依据：《中国食物成分表》常见食物嘌呤与胆固醇分类、高尿酸血症与血脂异常相关膳食共识的通用分级（嘌呤低 &lt;50、中 50–150、高 &gt;150 mg/100g）。<br>
       本工具只做日常膳食参考，不替代医嘱。痛风急性发作期、甘油三酯超过 5.6 mmol/L 时请遵医嘱，本工具的常规建议不适用。<br>
       你的查询记录不会上传，只存在这台设备上。
@@ -102,7 +106,7 @@ footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-he
   <header>
     <div>
       <h1>三高饮食红绿灯</h1>
-      <div class="sub">尿酸 460 · LDL 3.36 · TG 1.64　能不能吃、吃多少、为什么</div>
+      <div class="sub" id="hdr">能不能吃、吃多少、为什么</div>
     </div>
     <button class="iconbtn" id="setbtn">≡</button>
   </header>
