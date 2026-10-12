@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>三高饮食红绿灯</title>
+<meta name="theme-color" content="#FAFAFA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="饮食红绿灯">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#FAFAFA;color:#1D1D1F;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;line-height:1.6;font-size:15px;padding-bottom:40px}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+header{padding:22px 0 14px;display:flex;align-items:flex-start;justify-content:space-between}
+h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.2px}
+.sub{font-size:12px;color:#86868B;margin-top:2px}
+.iconbtn{background:#fff;border:.5px solid #D2D2D7;border-radius:10px;width:36px;height:36px;font-size:15px;color:#1D1D1F;cursor:pointer;flex:none}
+.searchbox{position:relative;margin-bottom:14px}
+input#q{width:100%;height:50px;border:.5px solid #D2D2D7;border-radius:12px;background:#fff;padding:0 14px 0 40px;font-size:17px;color:#1D1D1F;outline:none}
+input#q:focus{border-color:#378ADD}
+.mag{position:absolute;left:14px;top:16px;color:#86868B}
+.card{background:#fff;border:.5px solid #E5E5EA;border-radius:16px;padding:16px;margin-bottom:14px}
+.result{padding:16px}
+.verdict{display:flex;align-items:center;gap:10px;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.verdict-t{font-size:18px;font-weight:600;letter-spacing:-.2px}
+.verdict-s{font-size:13px;margin-top:2px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+.dot.big{width:14px;height:14px}
+.axes{margin-bottom:6px}
+.axe{margin-bottom:10px}
+.axe-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}
+.axe-k{color:#1D1D1F}
+.axe-v{font-weight:600;font-size:13px}
+.bar{height:6px;border-radius:3px;background:#F1EFE8;margin-top:5px;overflow:hidden}
+.bar-fill{height:6px;border-radius:3px}
+.axe-sub{font-size:11px;color:#86868B;margin-top:4px}
+.sec-t{font-size:12px;color:#86868B;margin:16px 0 8px;letter-spacing:.2px}
+.parts{border:.5px solid #E5E5EA;border-radius:12px;overflow:hidden}
+.part{display:flex;align-items:flex-start;gap:9px;padding:11px 12px;border-bottom:.5px solid #E5E5EA}
+.part:last-child{border-bottom:0}
+.part-main{flex:1}
+.part-n{font-size:14px}
+.part-t{font-size:12px;color:#86868B;margin-top:2px}
+.part-s{font-size:12px;color:#1D1D1F;white-space:nowrap;flex:none;padding-top:1px}
+.portion{background:#F5F5F7;border-radius:12px;padding:12px 14px;font-size:15px}
+.strict{margin-top:8px;font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:8px;padding:8px 10px}
+.why{margin:0;padding-left:18px;font-size:14px}
+.why li{margin-bottom:5px}
+.note{font-size:14px;color:#1D1D1F;background:#F5F5F7;border-radius:12px;padding:12px 14px}
+.note.alt{background:#E6F1FB}
+.approx{font-size:12px;color:#854F0B;background:#FAEEDA;border-radius:8px;padding:8px 10px;margin-bottom:12px}
+.quick{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:#fff;border:.5px solid #D2D2D7;border-radius:999px;padding:7px 13px;font-size:13px;color:#1D1D1F;cursor:pointer}
+.chip:active{background:#F5F5F7}
+.chip.sm{font-size:12px;padding:5px 10px;margin:4px 4px 0 0}
+.catpick{margin-top:14px;border-top:.5px solid #E5E5EA;padding-top:10px}
+.catpick-l{font-size:12px;color:#86868B;display:block;margin-bottom:4px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.metric{background:#F5F5F7;border-radius:12px;padding:12px}
+.m-l{font-size:11px;color:#86868B}
+.m-v{font-size:22px;font-weight:600;margin-top:2px;letter-spacing:-.5px}
+.m-s{font-size:11px;color:#A32D2D;margin-top:2px}
+.pick-row{display:flex;align-items:center;gap:9px;padding:11px 4px;border-bottom:.5px solid #E5E5EA;cursor:pointer}
+.pick-row:last-child{border-bottom:0}
+.pick-n{flex:1;font-size:15px}
+.pick-c{font-size:12px;color:#86868B}
+.sheet{position:absolute;top:0;left:0;right:0;background:#fff;border-bottom:.5px solid #E5E5EA;display:none;padding:18px 16px;z-index:9}
+.sheet.show{display:block}
+.sh-t{font-size:16px;font-weight:600;margin-bottom:10px}
+.sh-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:.5px solid #E5E5EA;font-size:14px}
+select{border:.5px solid #D2D2D7;border-radius:8px;padding:6px 8px;font-size:14px;background:#fff;color:#1D1D1F}
+.disclaim{font-size:12px;color:#86868B;margin-top:12px;line-height:1.7}
+.cl-btn{background:#fff;border:.5px solid #D2D2D7;border-radius:10px;padding:8px 14px;font-size:14px;cursor:pointer;margin-top:10px}
+footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sheet" id="sheet">
+    <div class="sh-t">设置</div>
+    <div class="sh-row"><span>控制严格度</span>
+      <select id="modesel">
+        <option value="standard">标准（推荐）</option>
+        <option value="strict">严格</option>
+        <option value="loose">宽松</option>
+      </select>
+    </div>
+    <div class="sh-row"><span>血尿酸 UA</span><span>460 μmol/L · 偏高</span></div>
+    <div class="sh-row"><span>坏胆固醇 LDL</span><span>3.36 mmol/L · 临界</span></div>
+    <div class="sh-row"><span>甘油三酯 TG</span><span>1.64 mmol/L · 临界</span></div>
+    <div class="disclaim">
+      判定依据：《中国食物成分表》常见食物嘌呤与胆固醇分类、高尿酸血症与血脂异常相关膳食共识的通用分级（嘌呤低 &lt;50、中 50–150、高 &gt;150 mg/100g）。<br>
+      本工具只做日常膳食参考，不替代医嘱。痛风急性发作期、甘油三酯超过 5.6 mmol/L 时请遵医嘱，本工具的常规建议不适用。<br>
+      你的查询记录不会上传，只存在这台设备上。
+    </div>
+    <button class="cl-btn" id="closebtn">收起</button>
+  </div>
+
+  <header>
+    <div>
+      <h1>三高饮食红绿灯</h1>
+      <div class="sub">尿酸 460 · LDL 3.36 · TG 1.64　能不能吃、吃多少、为什么</div>
+    </div>
+    <button class="iconbtn" id="setbtn">≡</button>
+  </header>
+
+  <div class="searchbox">
+    <svg class="mag" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#86868B" stroke-width="1.6"><circle cx="7" cy="7" r="4.6"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/></svg>
+    <input id="q" type="search" placeholder="输入食物名，比如 辣条 / 牛肉面" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  </div>
+
+  <div id="out"></div>
+
+  <footer>
+    数据只存在本机 · 离线可用 · 添加到主屏幕后像 App 一样打开<br>
+    膳食参考，非医疗建议
+  </footer>
+</div>
+<!--APP-->
+</body>
+</html>

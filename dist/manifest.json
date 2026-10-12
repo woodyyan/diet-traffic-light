@@ -1,0 +1,15 @@
+{
+  "name": "三高饮食红绿灯",
+  "short_name": "饮食红绿灯",
+  "description": "输入食物名，告诉你能不能吃、吃多少、为什么",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAFAFA",
+  "theme_color": "#FAFAFA",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

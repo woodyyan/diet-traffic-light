@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>三高饮食红绿灯</title>
+<meta name="theme-color" content="#FAFAFA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="饮食红绿灯">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#FAFAFA;color:#1D1D1F;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;line-height:1.6;font-size:15px;padding-bottom:40px}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+header{padding:22px 0 14px;display:flex;align-items:flex-start;justify-content:space-between}
+h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.2px}
+.sub{font-size:12px;color:#86868B;margin-top:2px}
+.iconbtn{background:#fff;border:.5px solid #D2D2D7;border-radius:10px;width:36px;height:36px;font-size:15px;color:#1D1D1F;cursor:pointer;flex:none}
+.searchbox{position:relative;margin-bottom:14px}
+input#q{width:100%;height:50px;border:.5px solid #D2D2D7;border-radius:12px;background:#fff;padding:0 14px 0 40px;font-size:17px;color:#1D1D1F;outline:none}
+input#q:focus{border-color:#378ADD}
+.mag{position:absolute;left:14px;top:16px;color:#86868B}
+.card{background:#fff;border:.5px solid #E5E5EA;border-radius:16px;padding:16px;margin-bottom:14px}
+.result{padding:16px}
+.verdict{display:flex;align-items:center;gap:10px;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.verdict-t{font-size:18px;font-weight:600;letter-spacing:-.2px}
+.verdict-s{font-size:13px;margin-top:2px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+.dot.big{width:14px;height:14px}
+.axes{margin-bottom:6px}
+.axe{margin-bottom:10px}
+.axe-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}
+.axe-k{color:#1D1D1F}
+.axe-v{font-weight:600;font-size:13px}
+.bar{height:6px;border-radius:3px;background:#F1EFE8;margin-top:5px;overflow:hidden}
+.bar-fill{height:6px;border-radius:3px}
+.axe-sub{font-size:11px;color:#86868B;margin-top:4px}
+.sec-t{font-size:12px;color:#86868B;margin:16px 0 8px;letter-spacing:.2px}
+.parts{border:.5px solid #E5E5EA;border-radius:12px;overflow:hidden}
+.part{display:flex;align-items:flex-start;gap:9px;padding:11px 12px;border-bottom:.5px solid #E5E5EA}
+.part:last-child{border-bottom:0}
+.part-main{flex:1}
+.part-n{font-size:14px}
+.part-t{font-size:12px;color:#86868B;margin-top:2px}
+.part-s{font-size:12px;color:#1D1D1F;white-space:nowrap;flex:none;padding-top:1px}
+.portion{background:#F5F5F7;border-radius:12px;padding:12px 14px;font-size:15px}
+.strict{margin-top:8px;font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:8px;padding:8px 10px}
+.why{margin:0;padding-left:18px;font-size:14px}
+.why li{margin-bottom:5px}
+.note{font-size:14px;color:#1D1D1F;background:#F5F5F7;border-radius:12px;padding:12px 14px}
+.note.alt{background:#E6F1FB}
+.approx{font-size:12px;color:#854F0B;background:#FAEEDA;border-radius:8px;padding:8px 10px;margin-bottom:12px}
+.quick{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:#fff;border:.5px solid #D2D2D7;border-radius:999px;padding:7px 13px;font-size:13px;color:#1D1D1F;cursor:pointer}
+.chip:active{background:#F5F5F7}
+.chip.sm{font-size:12px;padding:5px 10px;margin:4px 4px 0 0}
+.catpick{margin-top:14px;border-top:.5px solid #E5E5EA;padding-top:10px}
+.catpick-l{font-size:12px;color:#86868B;display:block;margin-bottom:4px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.metric{background:#F5F5F7;border-radius:12px;padding:12px}
+.m-l{font-size:11px;color:#86868B}
+.m-v{font-size:22px;font-weight:600;margin-top:2px;letter-spacing:-.5px}
+.m-s{font-size:11px;color:#A32D2D;margin-top:2px}
+.pick-row{display:flex;align-items:center;gap:9px;padding:11px 4px;border-bottom:.5px solid #E5E5EA;cursor:pointer}
+.pick-row:last-child{border-bottom:0}
+.pick-n{flex:1;font-size:15px}
+.pick-c{font-size:12px;color:#86868B}
+.sheet{position:absolute;top:0;left:0;right:0;background:#fff;border-bottom:.5px solid #E5E5EA;display:none;padding:18px 16px;z-index:9}
+.sheet.show{display:block}
+.sh-t{font-size:16px;font-weight:600;margin-bottom:10px}
+.sh-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:.5px solid #E5E5EA;font-size:14px}
+select{border:.5px solid #D2D2D7;border-radius:8px;padding:6px 8px;font-size:14px;background:#fff;color:#1D1D1F}
+.disclaim{font-size:12px;color:#86868B;margin-top:12px;line-height:1.7}
+.cl-btn{background:#fff;border:.5px solid #D2D2D7;border-radius:10px;padding:8px 14px;font-size:14px;cursor:pointer;margin-top:10px}
+footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sheet" id="sheet">
+    <div class="sh-t">设置</div>
+    <div class="sh-row"><span>控制严格度</span>
+      <select id="modesel">
+        <option value="standard">标准（推荐）</option>
+        <option value="strict">严格</option>
+        <option value="loose">宽松</option>
+      </select>
+    </div>
+    <div class="sh-row"><span>血尿酸 UA</span><span>460 μmol/L · 偏高</span></div>
+    <div class="sh-row"><span>坏胆固醇 LDL</span><span>3.36 mmol/L · 临界</span></div>
+    <div class="sh-row"><span>甘油三酯 TG</span><span>1.64 mmol/L · 临界</span></div>
+    <div class="disclaim">
+      判定依据：《中国食物成分表》常见食物嘌呤与胆固醇分类、高尿酸血症与血脂异常相关膳食共识的通用分级（嘌呤低 &lt;50、中 50–150、高 &gt;150 mg/100g）。<br>
+      本工具只做日常膳食参考，不替代医嘱。痛风急性发作期、甘油三酯超过 5.6 mmol/L 时请遵医嘱，本工具的常规建议不适用。<br>
+      你的查询记录不会上传，只存在这台设备上。
+    </div>
+    <button class="cl-btn" id="closebtn">收起</button>
+  </div>
+
+  <header>
+    <div>
+      <h1>三高饮食红绿灯</h1>
+      <div class="sub">尿酸 460 · LDL 3.36 · TG 1.64　能不能吃、吃多少、为什么</div>
+    </div>
+    <button class="iconbtn" id="setbtn">≡</button>
+  </header>
+
+  <div class="searchbox">
+    <svg class="mag" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#86868B" stroke-width="1.6"><circle cx="7" cy="7" r="4.6"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/></svg>
+    <input id="q" type="search" placeholder="输入食物名，比如 辣条 / 牛肉面" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  </div>
+
+  <div id="out"></div>
+
+  <footer>
+    数据只存在本机 · 离线可用 · 添加到主屏幕后像 App 一样打开<br>
+    膳食参考，非医疗建议
+  </footer>
+</div>
+<script>
+// 食物库 1：主食、肉蛋
+// lv = [嘌呤, 胆固醇, 饱和脂肪, 糖, 钠]  0=低 1=中 2=高
+// al = 别名（逗号分隔）  f = 标签  s = 份量  t = 提醒  alt = 替代
+window.FOODS = window.FOODS || [];
+window.FOODS.push(
+{n:"米饭",py:"mi fan",al:"白米饭,大米饭,饭,白饭",c:"grain",lv:[0,0,0,0,0],gi:83,s:"每餐熟重 100–150 g（一小碗）",t:"精制碳水升糖快，煮硬一点、凉一点再吃升糖慢些",alt:"换成一半杂粮饭或糙米饭"},
+{n:"糙米饭",py:"cao mi fan",al:"糙米",c:"grain",lv:[0,0,0,0,0],gi:68,s:"每餐 100–150 g",t:"纤维高、升糖比白米慢，优先选它"},
+{n:"杂粮饭",py:"za liang fan",al:"五谷饭,杂粮",c:"grain",lv:[0,0,0,0,0],gi:65,s:"每餐 100–150 g",t:"控糖控重都更稳"},
+{n:"燕麦",py:"yan mai",al:"燕麦片,麦片",c:"grain",lv:[0,0,0,0,0],gi:55,s:"干重 30–40 g 一次",t:"β-葡聚糖对降 LDL 有实证实据，别买添加了糖的速溶款",alt:"纯燕麦片 + 牛奶"},
+{n:"白粥",py:"bai zhou",al:"粥,大米粥,稀饭",c:"grain",lv:[0,0,0,0,0],gi:88,s:"一小碗，别当水喝",t:"升糖指数比白米饭还高，而且容易喝多，甘油三酯最怕这个"},
+{n:"小米粥",py:"xiao mi zhou",al:"小米",c:"grain",lv:[0,0,0,0,0],gi:61,s:"一小碗"},
+{n:"八宝粥",py:"ba bao zhou",c:"grain",lv:[0,0,0,2,0],gi:70,t:"罐装款基本是糖水",alt:"自己煮无糖杂粮粥"},
+{n:"馒头",py:"man tou",al:"白面馒头",c:"grain",lv:[0,0,0,0,0],gi:88,s:"一个（约 100 g）",t:"配菜配蛋白吃，别空口吃"},
+{n:"全麦面包",py:"quan mai mian bao",al:"全麦吐司",c:"grain",lv:[0,0,0,0,0],gi:69,s:"1–2 片",t:"看配料表，第一位必须是全麦粉，且糖排在后面"},
+{n:"白吐司",py:"bai tu si",al:"吐司,白面包",c:"grain",lv:[0,0,0,1,0],gi:75,s:"1 片",alt:"换全麦面包"},
+{n:"花卷",py:"hua juan",c:"grain",lv:[0,0,0,0,0],gi:88,s:"一个"},
+{n:"肉包",py:"rou bao",al:"肉包子,猪肉包",c:"grain",lv:[0,1,1,0,1],gi:70,s:"1 个",t:"馅里肥肉多，油盐都不低"},
+{n:"菜包",py:"cai bao",al:"青菜包,素包",c:"grain",lv:[0,0,0,0,1],gi:70,s:"1–2 个",t:"比肉包好，但馅里油盐不少"},
+{n:"豆沙包",py:"dou sha bao",c:"grain",lv:[0,0,0,2,0],gi:75,s:"不吃或半个",t:"豆沙就是糖"},
+{n:"奶黄包",py:"nai huang bao",c:"grain",lv:[0,1,1,2,0],gi:75,s:"不吃",t:"糖 + 黄油 + 蛋黄三件套"},
+{n:"小笼包",py:"xiao long bao",al:"灌汤包,汤包",c:"grain",lv:[0,1,1,0,1],gi:70,s:"3–4 个",t:"汤汁里全是溶出来的油脂和嘌呤，汤别吸",alt:"换成蒸饺，汤倒掉"},
+{n:"饺子",py:"jiao zi",al:"水饺,猪肉饺子,白菜猪肉饺",c:"grain",lv:[0,1,1,0,1],gi:60,s:"8–10 个",t:"水煮比煎的好；馅里肉多菜少，别蘸太多酱油"},
+{n:"馄饨",py:"hun tun",al:"云吞,抄手",c:"grain",lv:[0,1,1,0,1],gi:60,s:"10 个左右",t:"汤里有盐和油，少喝"},
+{n:"锅贴",py:"guo tie",al:"煎饺",c:"grain",lv:[0,1,2,0,1],gi:60,f:"fried",s:"4–5 个",t:"煎的比煮的多一层油"},
+{n:"生煎",py:"sheng jian",al:"生煎包",c:"grain",lv:[0,1,2,0,1],f:"fried",s:"2–3 个",t:"底面全是油，汤汁更是油和嘌呤"},
+{n:"面条",py:"mian tiao",al:"面,挂面,拉面,汤面,切面",c:"grain",lv:[0,0,0,0,0],gi:81,s:"干重 60–80 g（煮好约一小碗）",t:"面本身没问题，问题在汤、油和浇头"},
+{n:"方便面",py:"fang bian mian",al:"泡面,速食面",c:"grain",lv:[0,0,2,0,2],gi:80,f:"fried",s:"不吃",t:"面饼是油炸的，料包钠就顶一天的量",alt:"非油炸挂面 + 自己调味"},
+{n:"米粉",py:"mi fen",al:"米线,河粉,粿条",c:"grain",lv:[0,0,0,0,0],gi:61,s:"一碗",t:"米制品升糖比小麦制品低一点，汤还是别喝"},
+{n:"肠粉",py:"chang fen",al:"布拉肠",c:"grain",lv:[0,0,0,0,1],gi:65,s:"一份",t:"酱油咸，少淋"},
+{n:"螺蛳粉",py:"luo si fen",c:"grain",lv:[0,0,1,0,2],gi:65,f:"soup_meat",s:"不吃或少吃",t:"汤是螺骨熬的，嘌呤和油都溶在里头，钠更是爆表"},
+{n:"土豆",py:"tu dou",al:"马铃薯,洋芋",c:"grain",lv:[0,0,0,0,0],gi:78,s:"一个中等大小",t:"算主食不算菜，吃了土豆要减饭",alt:"蒸或煮，别做成薯条薯片"},
+{n:"红薯",py:"hong shu",al:"地瓜,番薯,紫薯",c:"grain",lv:[0,0,0,1,0],gi:63,s:"一个小的",t:"当主食吃，纤维好，别当零食加餐"},
+{n:"玉米",py:"yu mi",al:"甜玉米,糯玉米",c:"grain",lv:[0,0,0,0,0],gi:55,s:"一根",t:"糯玉米升糖更快，选甜玉米"},
+{n:"山药",py:"shan yao",c:"grain",lv:[0,0,0,0,0],gi:51,s:"一段",t:"也算主食，吃了要减饭"},
+{n:"南瓜",py:"nan gua",c:"veg",lv:[0,0,0,0,0],gi:75,s:"一盘"},
+{n:"荞麦面",py:"qiao mai mian",al:"荞面",c:"grain",lv:[0,0,0,0,0],gi:54,s:"一碗",t:"升糖慢，比白面条好"},
+{n:"意大利面",py:"yi da li mian",al:"意面",c:"grain",lv:[0,0,0,0,0],gi:49,s:"干重 70 g",t:"煮到偏硬（al dente）升糖最慢"},
+{n:"藜麦",py:"li mai",c:"grain",lv:[0,0,0,0,0],gi:53,s:"一小碗"},
+{n:"炒饭",py:"chao fan",al:"蛋炒饭,扬州炒饭",c:"grain",lv:[0,1,1,0,1],gi:80,f:"fried",s:"小半碗",t:"油大，饭又是隔夜冷饭炒的吸油更多"},
+{n:"炒面",py:"chao mian",c:"grain",lv:[0,0,1,0,1],f:"fried",s:"小份",t:"油大，加料越多越糟"},
+{n:"油条",py:"you tiao",al:"油炸鬼",c:"grain",lv:[0,0,2,0,1],gi:75,f:"fried",s:"不吃",t:"油炸 + 精制碳水，甘油三酯最怕的组合",alt:"换成蒸馒头或玉米"},
+{n:"煎饼果子",py:"jian bing guo zi",al:"煎饼",c:"grain",lv:[0,1,1,0,1],f:"fried",s:"不吃或半个",t:"薄脆是油炸的，酱料咸"},
+{n:"烧饼",py:"shao bing",al:"麻酱烧饼",c:"grain",lv:[0,0,1,0,1],gi:75,s:"半个",t:"起酥用油多"},
+{n:"肉夹馍",py:"rou jia mo",al:"腊汁肉夹馍",c:"grain",lv:[0,1,1,0,1],gi:70,s:"不吃或半个",t:"腊汁肉肥多，饼还吸油"},
+{n:"粽子",py:"zong zi",al:"肉粽,咸粽",c:"grain",lv:[0,1,1,0,1],gi:70,s:"半个小的",t:"糯米升糖快，肉粽有肥肉"},
+{n:"汤圆",py:"tang yuan",al:"元宵",c:"grain",lv:[0,0,1,1,0],gi:80,s:"不吃或 2 个",t:"糯米皮 + 甜馅，糖油混合物"},
+{n:"年糕",py:"nian gao",c:"grain",lv:[0,0,0,0,0],gi:85,s:"几片",t:"升糖快，而且常是油炒或甜汤煮的"},
+{n:"凉皮",py:"liang pi",al:"面皮",c:"grain",lv:[0,0,0,0,1],gi:65,s:"一份",t:"调料里的辣椒油和盐是主要问题，少放"},
+{n:"窝头",py:"wo tou",c:"grain",lv:[0,0,0,0,0],gi:55,s:"一个"},
+{n:"刀削面",py:"dao xiao mian",c:"grain",lv:[0,0,0,0,0],gi:80,s:"一碗",t:"面没事，汤别喝"},
+{n:"热干面",py:"re gan mian",c:"grain",lv:[0,0,1,0,1],gi:80,s:"小份",t:"芝麻酱油多，钠也不低"},
+{n:"担担面",py:"dan dan mian",c:"grain",lv:[0,0,1,0,2],gi:80,s:"小份",t:"肉臊油 + 酱料钠高"},
+{n:"油泼面",py:"you po mian",al:"biangbiang面,裤带面",c:"grain",lv:[0,0,1,0,1],gi:80,s:"小份",t:"热油泼的那一下，就是纯脂肪"},
+
+{n:"猪瘦肉",py:"zhu shou rou",al:"瘦肉,猪肉,里脊肉,猪里脊",c:"meat",lv:[1,0,1,0,0],s:"一餐 50–75 g",t:"中嘌呤，可以吃但要称重；一天红肉总量别超 100 g"},
+{n:"猪五花",py:"zhu wu hua",al:"五花肉,肥肉",c:"meat",lv:[1,0,2,0,0],s:"不吃或薄片 2–3 片",t:"饱和脂肪是 LDL 的主要推手"},
+{n:"猪蹄",py:"zhu ti",al:"猪脚,猪手",c:"meat",lv:[1,0,2,0,0],s:"不吃",t:"全是皮和脂肪"},
+{n:"排骨",py:"pai gu",al:"猪排骨,大排",c:"meat",lv:[1,0,2,0,0],s:"2–3 小块",t:"贴骨肉香，脂肪也多；别喝汤"},
+{n:"红烧肉",py:"hong shao rou",c:"meat",lv:[1,0,2,1,1],s:"1–2 块",t:"五花肉 + 糖，两个指标一起打"},
+{n:"糖醋排骨",py:"tang cu pai gu",c:"meat",lv:[1,0,2,2,1],s:"不吃",t:"光糖就够呛，还全是肥肉"},
+{n:"培根",py:"pei gen",al:"烟肉",c:"meat",lv:[1,0,2,0,2],f:"processed",s:"不吃",t:"加工肉 + 饱和脂肪 + 钠"},
+{n:"香肠",py:"xiang chang",al:"腊肠,火腿肠",c:"meat",lv:[1,1,2,0,2],f:"processed",s:"不吃",t:"肥肉、盐、亚硝酸盐三件套"},
+{n:"午餐肉",py:"wu can rou",c:"meat",lv:[1,1,2,0,2],f:"processed",s:"不吃",t:"火锅里最常见，也是最不该涮的"},
+{n:"腊肉",py:"la rou",al:"腊肠,咸肉",c:"meat",lv:[1,0,2,0,2],f:"processed",s:"不吃或 2 片",t:"饱和脂肪和钠都爆表"},
+{n:"猪肝",py:"zhu gan",al:"肝,肝脏,炒肝",c:"organ",lv:[2,2,1,0,0],f:"organ",s:"不吃",t:"嘌呤和胆固醇都是顶格，是三高人群第一禁区",alt:"想补铁就吃瘦肉 + 维生素 C"},
+{n:"猪肾",py:"zhu shen",al:"腰花,猪腰",c:"organ",lv:[2,2,1,0,0],f:"organ",s:"不吃",t:"烧烤摊的腰花，嘌呤爆表"},
+{n:"猪脑",py:"zhu nao",al:"脑花",c:"organ",lv:[2,2,2,0,0],f:"organ",s:"不吃",t:"胆固醇最高档，一口顶一天"},
+{n:"猪肚",py:"zhu du",c:"organ",lv:[2,1,0,0,0],f:"organ",s:"不吃",t:"内脏类，嘌呤高"},
+{n:"猪血",py:"zhu xue",al:"血豆腐,鸭血",c:"organ",lv:[1,1,0,0,0],s:"少量",t:"比内脏好，但也是血制品，别当主力菜"},
+{n:"猪皮",py:"zhu pi",al:"肉皮",c:"meat",lv:[1,0,2,0,0],s:"不吃",t:"纯脂肪"},
+{n:"牛瘦肉",py:"niu shou rou",al:"牛肉,瘦牛肉,牛腱",c:"meat",lv:[1,0,1,0,0],s:"一餐 50–75 g",t:"中嘌呤，是优质蛋白，称重吃没问题"},
+{n:"牛腩",py:"niu nan",c:"meat",lv:[1,0,2,0,0],s:"3–4 块",t:"筋多油多，炖牛腩的汤更别碰"},
+{n:"肥牛",py:"fei niu",al:"肥牛卷",c:"meat",lv:[1,0,2,0,0],s:"3–4 片",t:"火锅主力，也是饱和脂肪主力"},
+{n:"牛排",py:"niu pai",c:"meat",lv:[1,0,2,0,0],s:"100 g 以内，选菲力",t:"选瘦部位，别配黄油酱汁"},
+{n:"牛肚",py:"niu du",al:"毛肚,百叶",c:"organ",lv:[2,1,0,0,0],f:"organ",s:"不吃",t:"火锅里的毛肚是内脏，嘌呤高，而且涮完挂满了油"},
+{n:"牛肝",py:"niu gan",c:"organ",lv:[2,2,1,0,0],f:"organ",s:"不吃"},
+{n:"羊肉",py:"yang rou",al:"羊腿肉,涮羊肉,羊肉卷",c:"meat",lv:[1,0,2,0,0],s:"50–75 g",t:"羊肉饱和脂肪比猪牛都高，涮火锅时油全在汤里"},
+{n:"羊排",py:"yang pai",c:"meat",lv:[1,0,2,0,0],s:"1–2 块"},
+{n:"鸡胸肉",py:"ji xiong rou",al:"鸡胸,鸡柳",c:"meat",lv:[1,0,0,0,0],s:"100 g",t:"三高人群最友好的肉，去皮、水煮或煎都行",alt:"日常蛋白质首选"},
+{n:"鸡腿肉",py:"ji tui rou",al:"鸡腿,琵琶腿",c:"meat",lv:[1,0,1,0,0],s:"一个（去皮）",t:"去皮吃，皮才是脂肪"},
+{n:"鸡翅",py:"ji chi",c:"meat",lv:[1,0,1,0,0],s:"1–2 个",t:"皮和皮下脂肪最多，别吃炸的"},
+{n:"鸡爪",py:"ji zhua",al:"凤爪,泡椒凤爪",c:"meat",lv:[1,1,1,0,2],s:"不吃或 1 个",t:"皮多胆固醇高，卤味的钠还爆表"},
+{n:"鸡皮",py:"ji pi",c:"meat",lv:[1,0,2,0,0],s:"不吃",t:"纯脂肪"},
+{n:"鸡肝",py:"ji gan",c:"organ",lv:[2,2,1,0,0],f:"organ",s:"不吃"},
+{n:"鸭肉",py:"ya rou",al:"烤鸭,鸭子",c:"meat",lv:[1,0,2,0,0],s:"50–75 g（去皮）",t:"鸭皮脂肪极厚，吃烤鸭务必去皮"},
+{n:"鸭皮",py:"ya pi",c:"meat",lv:[1,0,2,0,0],s:"不吃"},
+{n:"鹅肉",py:"e rou",c:"meat",lv:[1,0,2,0,0],s:"50 g（去皮）"},
+{n:"鸡蛋",py:"ji dan",al:"蛋,煮鸡蛋,水煮蛋",c:"egg",lv:[0,2,1,0,0],s:"一天 1 个；血脂严控期隔天 1 个或只吃蛋白",t:"膳食胆固醇主要来自蛋黄。你的 LDL 在临界值，一天 1 个是安全的，别吃 3 个",alt:"蛋清随便吃，蛋白部分不含胆固醇"},
+{n:"蛋清",py:"dan qing",al:"蛋白",c:"egg",lv:[0,0,0,0,0],s:"随便吃",t:"纯蛋白，零胆固醇零嘌呤"},
+{n:"蛋黄",py:"dan huang",c:"egg",lv:[0,2,2,0,0],s:"一天不超过 1 个",t:"胆固醇几乎全在这里"},
+{n:"鹌鹑蛋",py:"an chun dan",c:"egg",lv:[0,2,1,0,0],s:"2–3 个",t:"按重量算胆固醇比鸡蛋还高"},
+{n:"咸鸭蛋",py:"xian ya dan",c:"egg",lv:[0,2,1,0,2],s:"不吃或半个",t:"一个咸鸭蛋的钠就快到一天的量了"},
+{n:"皮蛋",py:"pi dan",al:"松花蛋",c:"egg",lv:[0,2,0,0,1],s:"半个",t:"钠不低，偶尔吃"},
+{n:"卤蛋",py:"lu dan",al:"茶叶蛋",c:"egg",lv:[0,2,1,0,1],s:"1 个",t:"卤汁咸，但比咸鸭蛋好"}
+);
+
+// 食物库 2：水产、豆制品、蔬菜、水果
+window.FOODS = window.FOODS || [];
+window.FOODS.push(
+{n:"草鱼",py:"cao yu",al:"鱼,鱼肉,淡水鱼",c:"fish",lv:[1,0,0,0,0],s:"一餐 75–100 g",t:"中嘌呤，比红肉友好，蒸着吃最好"},
+{n:"鲤鱼",py:"li yu",c:"fish",lv:[1,0,0,0,0],s:"75–100 g"},
+{n:"鲈鱼",py:"lu yu",al:"海鲈鱼",c:"fish",lv:[1,0,0,0,0],s:"一条小的（100 g 肉）",t:"刺少肉嫩，清蒸首选"},
+{n:"带鱼",py:"dai yu",c:"fish",lv:[1,0,1,0,0],s:"3–4 段",t:"多为油炸或红烧，改成清蒸/干煎少油"},
+{n:"三文鱼",py:"san wen yu",al:"鲑鱼,三文鱼刺身",c:"fish",lv:[1,0,1,0,0],s:"75 g",t:"脂肪虽多但以 Omega-3 为主，对血脂反而有益；注意热量和生食卫生"},
+{n:"金枪鱼",py:"jin qiang yu",al:"吞拿鱼,鲔鱼",c:"fish",lv:[1,0,0,0,0],s:"75 g",t:"嘌呤在鱼里偏高，罐头款钠也高"},
+{n:"鳕鱼",py:"xue yu",al:"银鳕鱼",c:"fish",lv:[1,0,0,0,0],s:"100 g",t:"刺少肉白，适合常吃"},
+{n:"黄花鱼",py:"huang hua yu",c:"fish",lv:[1,0,0,0,0],s:"一条小的"},
+{n:"鲫鱼",py:"ji yu",c:"fish",lv:[1,0,0,0,0],s:"一条",t:"鱼肉可以吃，鲫鱼汤千万别喝"},
+{n:"鳗鱼",py:"man yu",al:"烤鳗,鳗鱼饭",c:"fish",lv:[1,0,2,1,1],s:"不吃或 2 片",t:"脂肪厚，蒲烧汁全是糖"},
+{n:"秋刀鱼",py:"qiu dao yu",c:"fish",lv:[2,0,2,0,0],s:"不吃",t:"嘌呤高 + 脂肪高"},
+{n:"沙丁鱼",py:"sha ding yu",c:"fish",lv:[2,0,1,0,1],s:"不吃",t:"嘌呤在水产里算最高的那一档"},
+{n:"凤尾鱼",py:"feng wei yu",c:"fish",lv:[2,0,1,0,2],s:"不吃"},
+{n:"鱼籽",py:"yu zi",al:"鱼子,鱼子酱",c:"fish",lv:[2,2,1,0,1],s:"不吃",t:"嘌呤和胆固醇双高"},
+{n:"鱼干",py:"yu gan",al:"小鱼干,鱼片干",c:"fish",lv:[2,1,0,0,2],s:"不吃",t:"脱水后嘌呤和盐都浓缩了"},
+{n:"虾",py:"xia",al:"基围虾,明虾,河虾,虾仁",c:"shellfish",lv:[1,1,0,0,0],f:"shellfish",s:"5–6 只（约 75 g）",t:"胆固醇中等、嘌呤中等，可以少量吃，别天天吃"},
+{n:"小龙虾",py:"xiao long xia",al:"麻小,龙虾",c:"shellfish",lv:[1,1,0,0,2],f:"shellfish",s:"5–6 只",t:"虾肉本身还行，问题是重油重盐的做法，汤汁别蘸"},
+{n:"蟹",py:"xie",al:"大闸蟹,螃蟹,河蟹,肉蟹",c:"shellfish",lv:[1,1,0,0,0],f:"shellfish",s:"一只",t:"蟹肉可以吃，蟹黄要忌口"},
+{n:"蟹黄",py:"xie huang",al:"蟹膏",c:"shellfish",lv:[1,2,2,0,0],s:"不吃",t:"胆固醇极高，是大闸蟹最该避开的部分"},
+{n:"蟹棒",py:"xie bang",al:"蟹柳,仿蟹肉",c:"processed",lv:[1,0,0,1,1],f:"processed",s:"不吃",t:"其实是鱼糜 + 淀粉 + 盐"},
+{n:"蛤蜊",py:"ge li",al:"花蛤,文蛤,贝类,蚬子",c:"shellfish",lv:[2,1,0,0,1],f:"shellfish",s:"不吃",t:"贝类是嘌呤高地，痛风人群的老禁区"},
+{n:"扇贝",py:"shan bei",al:"干贝,带子",c:"shellfish",lv:[2,1,0,0,1],f:"shellfish",s:"不吃"},
+{n:"牡蛎",py:"mu li",al:"生蚝,蚝,海蛎子",c:"shellfish",lv:[2,1,0,0,1],f:"shellfish",s:"不吃",t:"锌高但嘌呤更高"},
+{n:"鲍鱼",py:"bao yu",c:"shellfish",lv:[2,1,0,0,0],f:"shellfish",s:"不吃"},
+{n:"鱿鱼",py:"you yu",al:"鱿鱼须,铁板鱿鱼,枪乌贼",c:"shellfish",lv:[1,2,0,0,1],f:"shellfish",s:"不吃或几片",t:"胆固醇在海鲜里排前列"},
+{n:"章鱼",py:"zhang yu",al:"八爪鱼,小章鱼",c:"shellfish",lv:[1,1,0,0,0],f:"shellfish",s:"少量"},
+{n:"墨鱼",py:"mo yu",al:"乌贼",c:"shellfish",lv:[1,2,0,0,0],f:"shellfish",s:"少量"},
+{n:"海参",py:"hai shen",c:"shellfish",lv:[0,0,0,0,0],s:"适量",t:"低嘌呤低脂，是少数可以放心吃的海鲜"},
+{n:"海蜇",py:"hai zhe",al:"海蜇皮",c:"shellfish",lv:[0,0,0,0,1],s:"一碟",t:"低嘌呤，凉拌时少放糖和酱油"},
+{n:"虾米",py:"xia mi",al:"海米,虾皮,金钩",c:"shellfish",lv:[2,1,0,0,2],s:"不吃",t:"浓缩的嘌呤和盐，一小把就够了"},
+{n:"鱼丸",py:"yu wan",al:"鱼豆腐,鱼糕,甜不辣",c:"processed",lv:[1,0,0,0,1],f:"processed",s:"2–3 个",t:"淀粉多、钠高，不是真鱼肉"},
+{n:"虾滑",py:"xia hua",c:"processed",lv:[1,1,0,0,1],f:"processed",s:"少量",t:"本质是虾糜，比整虾好控制量"},
+{n:"紫菜",py:"zi cai",c:"veg",lv:[1,0,0,0,1],s:"少量",t:"中嘌呤，做汤时它把嘌呤送进汤里了"},
+{n:"海带",py:"hai dai",al:"昆布",c:"veg",lv:[0,0,0,0,1],s:"一碟",t:"低嘌呤，凉拌或炖都行"},
+{n:"裙带菜",py:"qun dai cai",al:"海带芽",c:"veg",lv:[1,0,0,0,1],s:"少量"},
+{n:"海苔",py:"hai tai",al:"海苔脆片",c:"snack",lv:[1,0,1,0,2],s:"不吃",t:"调味海苔油盐都不低"},
+
+{n:"豆腐",py:"dou fu",al:"北豆腐,南豆腐,嫩豆腐,水豆腐",c:"bean",lv:[0,0,0,0,0],s:"一餐 100–150 g",t:"以前的观念错了：豆制品不升尿酸，反而比红肉安全得多，可以常吃",alt:"用豆腐替换掉一半的肉"},
+{n:"豆腐干",py:"dou fu gan",al:"香干,豆干",c:"bean",lv:[0,0,0,0,1],s:"2–3 片",t:"钠偏高，卤味的更咸"},
+{n:"豆腐皮",py:"dou fu pi",al:"千张,百叶,腐皮",c:"bean",lv:[1,0,0,0,0],s:"少量",t:"脱水后嘌呤比豆腐高，别当主菜吃"},
+{n:"腐竹",py:"fu zhu",al:"豆筋",c:"bean",lv:[1,0,2,0,0],s:"不吃或几根",t:"吸油大户，涮火锅时它吸的全是汤里的油"},
+{n:"油豆腐",py:"you dou fu",al:"豆泡",c:"bean",lv:[1,0,2,0,0],f:"fried",s:"不吃"},
+{n:"臭豆腐",py:"chou dou fu",c:"bean",lv:[1,0,2,0,2],f:"fried",s:"不吃",t:"油炸 + 重盐卤水"},
+{n:"豆浆",py:"dou jiang",al:"黄豆浆",c:"bean",lv:[0,0,0,0,0],s:"一杯 250 ml",t:"无糖的可以每天喝，是很好的蛋白来源"},
+{n:"黄豆",py:"huang dou",al:"大豆,毛豆",c:"bean",lv:[1,0,0,0,0],s:"一小把",t:"干豆嘌呤中等，但做成豆腐豆浆后大幅下降"},
+{n:"黑豆",py:"hei dou",c:"bean",lv:[1,0,0,0,0],s:"一小把"},
+{n:"绿豆",py:"lv dou",c:"bean",lv:[1,0,0,0,0],s:"一碗（不加糖）",t:"绿豆汤别加糖，糖会毁掉它"},
+{n:"红豆",py:"hong dou",al:"赤小豆",c:"bean",lv:[1,0,0,0,0],s:"一碗（不加糖）",t:"豆沙里的糖才是问题"},
+{n:"鹰嘴豆",py:"ying zui dou",c:"bean",lv:[1,0,0,0,0],s:"一小碗"},
+{n:"豆芽",py:"dou ya",al:"绿豆芽,黄豆芽",c:"veg",lv:[1,0,0,0,0],s:"一盘",t:"中嘌呤但植物嘌呤影响小，正常吃没问题"},
+{n:"纳豆",py:"na dou",c:"bean",lv:[1,0,0,0,1],s:"一盒",t:"嘌呤中等，钠也不低，别天天吃"},
+
+{n:"西兰花",py:"xi lan hua",al:"青花菜,西蓝花",c:"veg",lv:[0,0,0,0,0],s:"随便吃",t:"放心吃，纤维和维生素都好"},
+{n:"菠菜",py:"bo cai",c:"veg",lv:[1,0,0,0,0],s:"一盘",t:"草酸和嘌呤都中等，但植物嘌呤对血尿酸影响很小，不用忌"},
+{n:"芦笋",py:"lu sun",c:"veg",lv:[1,0,0,0,0],s:"一盘",t:"嘌呤中等，蔬菜里算高的，但仍是植物来源，正常吃"},
+{n:"香菇",py:"xiang gu",al:"冬菇",c:"veg",lv:[1,0,0,0,0],s:"3–4 朵",t:"鲜香菇嘌呤中等，干香菇更高；别喝香菇汤"},
+{n:"金针菇",py:"jin zhen gu",c:"veg",lv:[1,0,0,0,0],s:"一把",t:"火锅里它吸油，夹出来沥一下"},
+{n:"平菇",py:"ping gu",c:"veg",lv:[1,0,0,0,0],s:"一盘"},
+{n:"口蘑",py:"kou mo",al:"白蘑菇,双孢菇",c:"veg",lv:[1,0,0,0,0],s:"一盘"},
+{n:"木耳",py:"mu er",al:"黑木耳,云耳",c:"veg",lv:[0,0,0,0,0],s:"一碟",t:"低嘌呤，凉拌好选择"},
+{n:"银耳",py:"yin er",al:"白木耳",c:"veg",lv:[0,0,0,0,0],s:"一碗",t:"别加冰糖"},
+{n:"韭菜",py:"jiu cai",c:"veg",lv:[0,0,0,0,0],s:"一盘",t:"做韭菜盒子/饺子时油最多，注意做法"},
+{n:"芹菜",py:"qin cai",c:"veg",lv:[0,0,0,0,0],s:"随便吃"},
+{n:"白菜",py:"bai cai",al:"大白菜,娃娃菜",c:"veg",lv:[0,0,0,0,0],s:"随便吃",t:"火锅里多下白菜，它吸油但你自己不吃油"},
+{n:"生菜",py:"sheng cai",c:"veg",lv:[0,0,0,0,0],s:"随便吃"},
+{n:"油麦菜",py:"you mai cai",c:"veg",lv:[0,0,0,0,0],s:"随便吃"},
+{n:"空心菜",py:"kong xin cai",al:"蕹菜",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"茄子",py:"qie zi",c:"veg",lv:[0,0,0,0,0],s:"一盘",t:"茄子本身零负担，但它像海绵一样吸油，油炸/油焖就毁了",alt:"蒸茄子、凉拌茄子"},
+{n:"青椒",py:"qing jiao",al:"辣椒,柿子椒",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"番茄",py:"fan qie",al:"西红柿,圣女果,小番茄",c:"veg",lv:[0,0,0,0,0],s:"随便吃",alt:"当零食吃的首选"},
+{n:"黄瓜",py:"huang gua",al:"青瓜",c:"veg",lv:[0,0,0,0,0],s:"随便吃"},
+{n:"冬瓜",py:"dong gua",c:"veg",lv:[0,0,0,0,0],s:"随便吃",t:"利尿、热量极低"},
+{n:"苦瓜",py:"ku gua",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"丝瓜",py:"si gua",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"白萝卜",py:"bai luo bo",al:"萝卜",c:"veg",lv:[0,0,0,0,0],s:"随便吃"},
+{n:"胡萝卜",py:"hu luo bo",c:"veg",lv:[0,0,0,0,0],s:"一根"},
+{n:"洋葱",py:"yang cong",c:"veg",lv:[0,0,0,0,0],s:"半个"},
+{n:"秋葵",py:"qiu kui",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"荷兰豆",py:"he lan dou",al:"豌豆荚",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"四季豆",py:"si ji dou",al:"豆角,扁豆",c:"veg",lv:[0,0,0,0,0],s:"一盘",t:"必须彻底煮熟"},
+{n:"豌豆",py:"wan dou",c:"veg",lv:[1,0,0,1,0],s:"半碗"},
+{n:"莲藕",py:"lian ou",c:"veg",lv:[0,0,0,0,0],s:"一盘",t:"淀粉含量不低，算半份主食"},
+{n:"荸荠",py:"bi qi",al:"马蹄",c:"veg",lv:[0,0,0,0,0],s:"几个"},
+{n:"芥蓝",py:"jie lan",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"苋菜",py:"xian cai",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"茼蒿",py:"tong hao",c:"veg",lv:[0,0,0,0,0],s:"一盘",t:"火锅必备，多下"},
+{n:"西葫芦",py:"xi hu lu",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"莴笋",py:"wo sun",al:"莴苣",c:"veg",lv:[0,0,0,0,0],s:"一盘"},
+{n:"竹笋",py:"zhu sun",c:"veg",lv:[1,0,0,0,0],s:"一盘",t:"中嘌呤，少量吃"},
+{n:"腌菜",py:"yan cai",al:"咸菜,酱菜,酸菜,泡菜,榨菜,梅干菜",c:"veg",lv:[0,0,0,0,2],s:"不吃或一小碟",t:"钠爆表，还会升血压伤肾，间接影响尿酸排泄"},
+{n:"葱姜蒜",py:"cong jiang suan",al:"大葱,生姜,大蒜,香菜",c:"veg",lv:[0,0,0,0,0],s:"随便用",t:"调味随便用，不占任何指标"},
+
+{n:"苹果",py:"ping guo",c:"fruit",lv:[0,0,0,1,0],gi:36,s:"一天一个",t:"带皮吃，纤维能拖慢果糖吸收"},
+{n:"香蕉",py:"xiang jiao",c:"fruit",lv:[0,0,0,1,0],gi:52,s:"一根",t:"钾高，对血压友好，但别吃两根"},
+{n:"橙子",py:"cheng zi",al:"橘子,柑橘,砂糖橘",c:"fruit",lv:[0,0,0,1,0],gi:43,s:"一个",t:"整颗吃，别榨汁；砂糖橘容易一吃一大盘，控制数量"},
+{n:"柚子",py:"you zi",al:"西柚,葡萄柚",c:"fruit",lv:[0,0,0,0,0],gi:25,s:"2–3 瓣",t:"升糖慢，是水果里最稳的"},
+{n:"葡萄",py:"pu tao",al:"提子",c:"fruit",lv:[0,0,0,1,0],gi:43,s:"一小串",t:"果糖浓度高，甘油三酯和尿酸都不喜欢"},
+{n:"西瓜",py:"xi gua",c:"fruit",lv:[0,0,0,1,0],gi:72,s:"一小碗",t:"升糖快，一次别吃半个"},
+{n:"草莓",py:"cao mei",c:"fruit",lv:[0,0,0,0,0],gi:40,s:"一小碗",t:"低糖高维 C，优选"},
+{n:"蓝莓",py:"lan mei",c:"fruit",lv:[0,0,0,0,0],gi:53,s:"一小盒"},
+{n:"樱桃",py:"ying tao",al:"车厘子",c:"fruit",lv:[0,0,0,1,0],gi:22,s:"一小碗",t:"有研究提示樱桃有助于降低尿酸，但也别当药吃"},
+{n:"猕猴桃",py:"mi hou tao",al:"奇异果",c:"fruit",lv:[0,0,0,1,0],gi:52,s:"一个"},
+{n:"芒果",py:"mang guo",c:"fruit",lv:[0,0,0,1,0],gi:55,s:"半个小的",t:"果糖高"},
+{n:"菠萝",py:"bo luo",al:"凤梨",c:"fruit",lv:[0,0,0,1,0],gi:66,s:"2–3 块"},
+{n:"荔枝",py:"li zhi",c:"fruit",lv:[0,0,0,2,0],gi:60,s:"不吃或 3–5 颗",t:"果糖极高，空腹大量吃还会出事"},
+{n:"桂圆",py:"gui yuan",al:"龙眼",c:"fruit",lv:[0,0,0,2,0],gi:53,s:"几颗"},
+{n:"榴莲",py:"liu lian",c:"fruit",lv:[0,0,2,2,0],gi:49,s:"不吃或一瓣",t:"糖和饱和脂肪双高，热量炸弹"},
+{n:"桃子",py:"tao zi",al:"水蜜桃,油桃",c:"fruit",lv:[0,0,0,1,0],gi:42,s:"一个"},
+{n:"梨",py:"li",c:"fruit",lv:[0,0,0,1,0],gi:38,s:"一个"},
+{n:"哈密瓜",py:"ha mi gua",al:"甜瓜,香瓜",c:"fruit",lv:[0,0,0,1,0],gi:65,s:"两小块"},
+{n:"木瓜",py:"mu gua",c:"fruit",lv:[0,0,0,1,0],gi:30,s:"几块"},
+{n:"火龙果",py:"huo long guo",c:"fruit",lv:[0,0,0,1,0],gi:48,s:"半个"},
+{n:"柿子",py:"shi zi",c:"fruit",lv:[0,0,0,1,0],gi:50,s:"一个",t:"别空腹吃"},
+{n:"石榴",py:"shi liu",c:"fruit",lv:[0,0,0,1,0],gi:35,s:"半个"},
+{n:"柠檬",py:"ning meng",c:"fruit",lv:[0,0,0,0,0],gi:20,s:"泡水喝",t:"柠檬水不升尿酸，放心喝"},
+{n:"鲜枣",py:"xian zao",al:"冬枣",c:"fruit",lv:[0,0,0,2,0],gi:42,s:"5–6 颗",t:"维 C 高但糖也高，冬枣尤其甜"},
+{n:"葡萄干",py:"pu tao gan",al:"果干,蔓越莓干,枣干",c:"fruit",lv:[0,0,0,2,0],gi:64,s:"一小把",t:"脱水后果糖浓缩，几颗就够了"},
+{n:"果汁",py:"guo zhi",al:"鲜榨果汁,橙汁,苹果汁",c:"drink",lv:[0,0,0,2,0],f:"sweet",gi:45,s:"不喝",t:"榨汁丢掉纤维，果糖直冲肝脏，甘油三酯和尿酸一起升——这是最容易被忽视的坑",alt:"直接吃整颗水果"},
+{n:"椰汁",py:"ye zhi",al:"椰奶,椰子水",c:"drink",lv:[0,0,1,1,0],s:"少喝",t:"椰奶饱和脂肪高，椰子水好一些"}
+);
+
+// 食物库 3：奶制品、坚果、饮料、零食、调味油脂
+window.FOODS = window.FOODS || [];
+window.FOODS.push(
+{n:"脱脂牛奶",py:"tuo zhi niu nai",al:"脱脂奶,低脂奶",c:"dairy",lv:[0,0,0,0,0],s:"一天 250–300 ml",t:"奶类是少数明确有助于尿酸排泄的食物，你能喝的最优选",alt:"每天一杯脱脂奶"},
+{n:"全脂牛奶",py:"quan zhi niu nai",al:"牛奶,纯牛奶",c:"dairy",lv:[0,0,1,0,0],s:"250 ml",t:"比脱脂的多了饱和脂肪，一天一杯还是可以的"},
+{n:"无糖酸奶",py:"wu tang suan nai",al:"酸奶,希腊酸奶,原味酸奶",c:"dairy",lv:[0,0,0,0,0],s:"一杯 150–200 g",t:"低嘌呤、促尿酸排泄，很好的加餐"},
+{n:"风味酸奶",py:"feng wei suan nai",al:"果粒酸奶,乳酸菌饮料,养乐多",c:"dairy",lv:[0,0,0,2,0],f:"sweet",s:"不喝",t:"乳酸菌饮料基本是糖水，含糖量跟可乐一个量级",alt:"换无糖酸奶 + 自己加水果"},
+{n:"奶酪",py:"nai lao",al:"芝士,起司,芝士片",c:"dairy",lv:[0,1,2,0,2],s:"不吃或 1 片",t:"饱和脂肪和钠双高"},
+{n:"黄油",py:"huang you",al:"牛油",c:"dairy",lv:[0,2,2,0,1],s:"不吃",t:"饱和脂肪最集中的东西之一"},
+{n:"奶油",py:"nai you",al:"淡奶油,鲜奶油",c:"dairy",lv:[0,1,2,0,0],s:"不吃"},
+{n:"冰淇淋",py:"bing qi lin",al:"雪糕,冰激凌",c:"dairy",lv:[0,1,2,2,0],s:"不吃",t:"糖 + 饱和脂肪 + 奶油"},
+{n:"豆奶",py:"dou nai",al:"豆乳",c:"dairy",lv:[0,0,0,0,0],s:"一杯",t:"无糖的可以"},
+{n:"燕麦奶",py:"yan mai nai",al:"燕麦饮",c:"dairy",lv:[0,0,0,1,0],s:"一杯",t:"碳水为主，别当奶替代品看营养"},
+
+{n:"核桃",py:"he tao",c:"nut",lv:[0,0,1,0,0],s:"一天 15 g（约 2–3 个）",t:"脂肪以不饱和为主，对血脂有利，但热量高必须称重"},
+{n:"杏仁",py:"xing ren",al:"巴旦木",c:"nut",lv:[0,0,1,0,0],s:"15 g（约 10 颗）",t:"选原味无盐的"},
+{n:"腰果",py:"yao guo",c:"nut",lv:[0,0,1,1,0],s:"15 g"},
+{n:"花生",py:"hua sheng",al:"油炸花生,酒鬼花生",c:"nut",lv:[1,0,1,0,1],s:"15 g",t:"嘌呤中等 + 脂肪高，油炸的最糟，选水煮原味"},
+{n:"瓜子",py:"gua zi",al:"葵花籽",c:"nut",lv:[0,0,1,0,1],s:"一小把",t:"一把接一把最危险，倒出来定量再吃"},
+{n:"南瓜子",py:"nan gua zi",c:"nut",lv:[1,0,1,0,0],s:"15 g"},
+{n:"芝麻",py:"zhi ma",c:"nut",lv:[1,0,1,0,0],s:"一勺",t:"芝麻酱热量极高，蘸料少放"},
+{n:"夏威夷果",py:"xia wei yi guo",al:"夏果,澳洲坚果",c:"nut",lv:[0,0,2,0,0],s:"3–4 颗",t:"脂肪含量坚果里最高"},
+{n:"开心果",py:"kai xin guo",c:"nut",lv:[0,0,1,0,1],s:"15 g",t:"选无盐的"},
+{n:"栗子",py:"li zi",al:"板栗",c:"nut",lv:[0,0,0,1,0],s:"5–6 颗",t:"淀粉类，算主食"},
+
+{n:"水",py:"shui",al:"白开水,矿泉水,温水",c:"drink",lv:[0,0,0,0,0],s:"一天 2000 ml 以上",t:"最便宜、最有效的降尿酸手段：喝水多，尿酸排得多",alt:"把饮料全换成水"},
+{n:"茶",py:"cha",al:"绿茶,红茶,普洱茶,乌龙茶",c:"drink",lv:[0,0,0,0,0],s:"一天几杯",t:"淡茶没问题，别喝浓茶和加糖茶饮料"},
+{n:"黑咖啡",py:"hei ka fei",al:"美式,咖啡",c:"drink",lv:[0,0,0,0,0],s:"一天 2–3 杯",t:"不加糖不加奶精的话，有研究提示对尿酸代谢友好"},
+{n:"拿铁",py:"na tie",al:"奶咖,卡布奇诺",c:"drink",lv:[0,0,1,0,0],s:"一杯（无糖）",t:"换成脱脂奶、不额外加糖就没问题"},
+{n:"啤酒",py:"pi jiu",al:"扎啤,精酿",c:"drink",lv:[0,0,0,0,0],f:"alcohol",s:"不喝",t:"啤酒是三重打击：酒精抑制尿酸排泄 + 啤酒本身含嘌呤 + 大量碳水升甘油三酯。对你来说这是最该戒掉的一样",alt:"换成无酒精啤酒或气泡水"},
+{n:"白酒",py:"bai jiu",al:"茅台,五粮液,二锅头",c:"drink",lv:[0,0,0,0,0],f:"alcohol",s:"不喝",t:"酒精本身阻断尿酸排泄，度数越高越狠"},
+{n:"红酒",py:"hong jiu",al:"葡萄酒",c:"drink",lv:[0,0,0,0,0],f:"alcohol",s:"不喝",t:"所谓「红酒护心」的收益远小于它升尿酸的代价"},
+{n:"黄酒",py:"huang jiu",al:"料酒,米酒,清酒",c:"drink",lv:[0,0,0,0,0],f:"alcohol",s:"不喝",t:"嘌呤含量在酒里偏高"},
+{n:"鸡尾酒",py:"ji wei jiu",al:"预调酒,RIO",c:"drink",lv:[0,0,0,2,0],f:"alcohol sweet",s:"不喝",t:"酒精 + 糖浆"},
+{n:"可乐",py:"ke le",al:"雪碧,七喜,汽水,碳酸饮料",c:"drink",lv:[0,0,0,2,0],f:"sweet",s:"不喝",t:"果葡糖浆直接推高甘油三酯和尿酸"},
+{n:"无糖可乐",py:"wu tang ke le",al:"零度可乐,健怡",c:"drink",lv:[0,0,0,0,0],s:"偶尔一罐",t:"代糖不升糖，比含糖的好，但别当水喝"},
+{n:"奶茶",py:"nai cha",al:"珍珠奶茶,波霸,奶盖",c:"drink",lv:[0,0,1,2,0],f:"sweet",s:"不喝",t:"一杯全糖奶茶的糖就有 40–60 g，是甘油三酯的头号帮凶",alt:"换无糖茶或黑咖啡"},
+{n:"无糖奶茶",py:"wu tang nai cha",al:"三分糖奶茶",c:"drink",lv:[0,0,1,1,0],s:"少喝",t:"珍珠和奶盖本身就有糖和脂肪"},
+{n:"气泡水",py:"qi pao shui",al:"苏打气泡水,巴黎水",c:"drink",lv:[0,0,0,0,1],s:"随便喝",t:"无糖无气泡负担，替代饮料的好选择"},
+{n:"功能饮料",py:"gong neng yin liao",al:"红牛,魔爪,能量饮料",c:"drink",lv:[0,0,0,2,0],f:"sweet",s:"不喝"},
+{n:"运动饮料",py:"yun dong yin liao",al:"宝矿力,佳得乐",c:"drink",lv:[0,0,0,1,0],s:"只在大量运动后喝",t:"不运动的时候喝就是糖水"},
+{n:"蜂蜜水",py:"feng mi shui",al:"蜂蜜",c:"drink",lv:[0,0,0,2,0],f:"sweet",s:"不喝",t:"蜂蜜一半以上是果糖，升尿酸比白糖还直接"},
+{n:"柠檬水",py:"ning meng shui",c:"drink",lv:[0,0,0,0,0],s:"随便喝",t:"不加糖的柠檬水很安全"},
+{n:"苏打水",py:"su da shui",al:"碱水",c:"drink",lv:[0,0,0,0,1],s:"可以喝",t:"弱碱水对尿酸的帮助有限，别指望它治病，但喝总比喝饮料强"},
+
+{n:"辣条",py:"la tiao",al:"面筋,辣片,素食",c:"snack",lv:[0,0,2,1,2],f:"fried",s:"不吃",t:"油（多半是反复煎炸的油）+ 精制碳水 + 钠，三个指标一起打，是零食里最不该碰的一类",alt:"实在嘴馋就吃 20 g，当天其它油全部省掉，一个月最多一次"},
+{n:"薯片",py:"shu pian",al:"薯条,土豆片",c:"snack",lv:[0,0,2,0,2],f:"fried",s:"不吃",t:"油炸淀粉 + 盐"},
+{n:"饼干",py:"bing gan",al:"曲奇,苏打饼干,威化",c:"snack",lv:[0,0,2,2,1],s:"不吃",t:"起酥油 + 糖，威化饼最糟"},
+{n:"蛋糕",py:"dan gao",al:"奶油蛋糕,慕斯",c:"snack",lv:[0,1,2,2,0],s:"不吃或一小块",t:"黄油奶油 + 糖"},
+{n:"甜甜圈",py:"tian tian quan",al:"多纳圈",c:"snack",lv:[0,0,2,2,0],f:"fried",s:"不吃"},
+{n:"巧克力",py:"qiao ke li",c:"snack",lv:[0,0,2,2,0],s:"不吃或 1 小块（选 85% 黑巧）",t:"越黑越好，牛奶巧克力基本是糖"},
+{n:"糖果",py:"tang guo",al:"软糖,橡皮糖,口香糖",c:"snack",lv:[0,0,0,2,0],s:"不吃"},
+{n:"沙琪玛",py:"sha qi ma",c:"snack",lv:[0,0,2,2,0],s:"不吃",t:"糖浆 + 油炸"},
+{n:"蛋黄派",py:"dan huang pai",al:"派,夹心蛋糕",c:"snack",lv:[0,1,2,2,1],s:"不吃"},
+{n:"桃酥",py:"tao su",al:"酥饼,老婆饼",c:"snack",lv:[0,0,2,2,0],s:"不吃",t:"起酥全靠油"},
+{n:"月饼",py:"yue bing",c:"snack",lv:[0,1,2,2,1],s:"不吃或 1/4 个",t:"一块月饼顶一顿饭的热量"},
+{n:"绿豆糕",py:"lv dou gao",c:"snack",lv:[0,0,1,2,0],s:"不吃"},
+{n:"果冻",py:"guo dong",al:"布丁",c:"snack",lv:[0,0,0,2,0],s:"不吃"},
+{n:"蜜饯",py:"mi jian",al:"话梅,果脯,山楂片",c:"snack",lv:[0,0,0,2,2],s:"不吃",t:"糖和盐都高"},
+{n:"猪肉脯",py:"zhu rou fu",al:"肉干,肉松,牛肉干",c:"snack",lv:[1,0,1,1,2],s:"不吃或一小片",t:"加工肉 + 糖 + 钠"},
+{n:"鸭脖",py:"ya bo",al:"卤味,鸭架,鸭肠,卤鸭",c:"snack",lv:[1,1,1,0,2],s:"不吃",t:"卤汁的钠爆表，皮和内脏还带胆固醇"},
+{n:"鱼片干",py:"yu pian gan",al:"鱿鱼丝,鳕鱼片",c:"snack",lv:[2,1,0,1,2],s:"不吃",t:"海鲜脱水后嘌呤浓缩"},
+{n:"爆米花",py:"bao mi hua",c:"snack",lv:[0,0,1,0,1],s:"一小桶（原味）",t:"影院款加了黄油和糖，原味空气爆的可以少量"},
+{n:"锅巴",py:"guo ba",al:"薯脆,米饼",c:"snack",lv:[0,0,2,0,2],f:"fried",s:"不吃"},
+
+{n:"橄榄油",py:"gan lan you",c:"oil",lv:[0,0,1,0,0],s:"一天总量 25–30 g",t:"油再好也是纯脂肪，控量比选品种更重要"},
+{n:"植物油",py:"zhi wu you",al:"花生油,菜籽油,玉米油,大豆油,葵花籽油",c:"oil",lv:[0,0,1,0,0],s:"一天总量 25–30 g",t:"炒菜用油是很多人忽略的大头：一勺油 10 g 就是 90 kcal"},
+{n:"猪油",py:"zhu you",al:"荤油,板油",c:"oil",lv:[0,0,2,0,0],s:"不吃",t:"饱和脂肪，炒青菜用它最香也最伤 LDL"},
+{n:"芝麻油",py:"zhi ma you",al:"香油,香油碟",c:"oil",lv:[0,0,1,0,0],s:"几滴",t:"火锅蘸料里的香油碟，一小碗就是 30 g 油"},
+{n:"沙拉酱",py:"sha la jiang",al:"千岛酱,凯撒酱",c:"oil",lv:[0,0,2,1,1],s:"不吃",t:"轻食沙拉的隐形杀手，酱比菜热量高"},
+{n:"蛋黄酱",py:"dan huang jiang",al:"美乃滋,沙拉酱",c:"oil",lv:[0,1,2,1,1],s:"不吃"},
+{n:"番茄酱",py:"fan qie jiang",al:"番茄沙司",c:"oil",lv:[0,0,0,2,2],s:"不吃",t:"一包番茄酱一半是糖"},
+{n:"辣椒酱",py:"la jiao jiang",al:"蒜蓉酱,辣椒油",c:"oil",lv:[0,0,2,0,2],s:"少放",t:"辣椒本身无害，辣油才是油"},
+{n:"豆瓣酱",py:"dou ban jiang",al:"黄豆酱,甜面酱",c:"oil",lv:[1,0,0,0,2],s:"少放",t:"一勺就够一天的盐了"},
+{n:"蚝油",py:"hao you",c:"oil",lv:[0,0,0,1,2],s:"少放"},
+{n:"酱油",py:"jiang you",al:"生抽,老抽",c:"oil",lv:[0,0,0,0,2],s:"少放",t:"减盐第一步就是把酱油减半，配醋和香料提味"},
+{n:"醋",py:"cu",al:"陈醋,米醋,香醋",c:"oil",lv:[0,0,0,0,0],s:"随便用",t:"有研究提示醋有助于延缓餐后血糖上升，可以多用"},
+{n:"糖",py:"tang",al:"白糖,冰糖,红糖,蜂蜜",c:"oil",lv:[0,0,0,2,0],f:"sweet",s:"不用",t:"做菜放糖是很多家庭的隐形糖来源，先停掉"},
+{n:"芝麻酱",py:"zhi ma jiang",al:"麻酱,花生酱,二八酱",c:"oil",lv:[1,0,2,0,0],s:"一勺",t:"火锅蘸料的半壁江山，热量密度极高"},
+{n:"老干妈",py:"lao gan ma",al:"风味豆豉,辣椒酱",c:"oil",lv:[0,0,2,0,2],s:"不吃",t:"一半是油，一半是盐"},
+{n:"味精",py:"wei jing",al:"鸡精,鸡粉,浓汤宝",c:"oil",lv:[0,0,0,0,2],s:"少放",t:"钠不低，浓汤宝更是嘌呤 + 钠"},
+{n:"盐",py:"yan",c:"oil",lv:[0,0,0,0,2],s:"一天 < 5 g",t:"减盐是护肾护血管的基础，间接帮你排尿酸"}
+);
+
+// 复合菜式（拆解到配料分别判定）与未收录食物的类别兜底规则
+window.FOODS = window.FOODS || [];
+window.FOODS.push(
+{n:"牛肉面",py:"niu rou mian",al:"兰州拉面,牛肉拉面,拉面,牛腩面",c:"dish",lv:[1,0,1,0,1],
+ parts:[{n:"面条",lv:[0,0,0,0,0],s:"干重 60–80 g，够吃就行",t:"面本身没问题，别泡太久"},
+        {n:"牛肉",lv:[1,0,1,0,0],s:"不超过 50 g",t:"中嘌呤，按块数算：3–4 片"},
+        {n:"面汤",lv:[2,0,1,0,2],s:"不喝",t:"肉里的嘌呤和浮油全溶进汤里了，喝汤等于把最坏的部分单独喝一遍"}],
+ t:"三句话：面可以吃，牛肉限量，汤一口别碰",
+ alt:"多点一份凉拌黄瓜或青菜，把面减半"},
+
+{n:"炒菜",py:"chao cai",al:"家常炒菜,小炒,热菜",c:"dish",lv:[0,0,1,0,1],
+ parts:[{n:"主料（肉/菜）",lv:[1,0,1,0,0],s:"肉 50–75 g，菜 200 g",t:"菜多肉少就安全"},
+        {n:"炒菜的油",lv:[0,0,2,0,0],s:"一菜一勺（10 g）",t:"外面餐馆一盘菜的油常常是家里的 2–3 倍"},
+        {n:"盐和酱油",lv:[0,0,0,0,2],s:"少放",t:"钠高会伤肾，间接影响尿酸排出"}],
+ t:"炒菜本身不是问题，油和盐才是。点菜时说「少油少盐」，吃前把菜在清水里过一遍",
+ alt:"优先点蒸、煮、白灼、凉拌的菜"},
+
+{n:"火锅",py:"huo guo",al:"涮锅,打边炉,涮羊肉,麻辣火锅,清汤火锅",c:"dish",lv:[1,0,1,0,1],
+ parts:[{n:"锅底汤",lv:[2,0,2,0,2],s:"不喝，别用汤涮",t:"涮过肉的汤嘌呤和油脂浓度极高，越煮越浓"},
+        {n:"肥牛 / 肥羊",lv:[1,0,2,0,0],s:"各不超过 5 片",t:"选瘦部位：牛腱、里脊、鸡胸、虾"},
+        {n:"内脏（毛肚/鸭肠/黄喉/脑花）",lv:[2,2,1,0,0],s:"不吃",t:"内脏是嘌呤高地，火锅里最常见的坑"},
+        {n:"贝类 / 虾滑 / 鱼丸",lv:[2,1,0,0,1],s:"不吃或极少",t:"贝类高嘌呤，丸子类是淀粉和钠"},
+        {n:"蔬菜 / 豆腐 / 菌菇",lv:[0,0,0,0,0],s:"随便下",t:"多下白菜、茼蒿、豆腐、木耳，它们吸油你不吸"},
+        {n:"蘸料",lv:[1,0,2,0,2],s:"一小碟，别续",t:"香油碟一小碗就是 30 g 油；换成醋 + 蒜 + 少量酱油"}],
+ t:"火锅是可以吃的健康餐，前提是你把它当成涮菜而不是涮肉：清汤锅、多菜少肉、不喝汤、蘸料换成醋碟",
+ alt:"选清汤或番茄锅，不点麻辣牛油锅"},
+
+{n:"串串香",py:"chuan chuan xiang",al:"钵钵鸡,冷锅串串,麻辣串",c:"dish",lv:[1,0,2,0,2],
+ parts:[{n:"红油汤底",lv:[1,0,2,0,2],s:"不吃",t:"串串的油是牛油红油，蘸满签子的每一口都是饱和脂肪"},
+        {n:"肉类串（鸡胗/鸭肠/郡肝/毛肚）",lv:[2,2,1,0,2],s:"不吃",t:"串串摊上主力全是内脏，这是它最危险的地方"},
+        {n:"蔬菜 / 豆制品串",lv:[0,0,0,0,0],s:"可以多吃",t:"藕片、土豆、豆皮、木耳、青菜可以拿"},
+        {n:"蘸料干碟",lv:[0,0,0,0,2],s:"少蘸",t:"干碟盐重"}],
+ t:"串串的问题在于「便宜所以拿得多」和「签子上挂满了油」。数着签子吃，全拿素菜",
+ alt:"想吃辣就点清汤串串，蘸干碟不蘸油碟"},
+
+{n:"麻辣烫",py:"ma la tang",al:"冒菜,麻辣拌",c:"dish",lv:[1,0,1,0,2],
+ parts:[{n:"汤底",lv:[1,0,1,0,2],s:"不喝",t:"汤是骨汤 + 红油 + 大量盐"},
+        {n:"主食（方便面/粉丝/土豆）",lv:[0,0,1,0,1],s:"选一种，分量减半",t:"别同时拿面 + 粉 + 土豆"},
+        {n:"肉丸 / 午餐肉 / 蟹棒",lv:[1,1,2,0,2],s:"不吃",t:"这些都是淀粉 + 肥肉 + 钠的组合"},
+        {n:"蔬菜 / 豆腐 / 鹌鹑蛋",lv:[0,0,0,0,0],s:"多选",t:"绿叶菜、木耳、豆腐、海带是麻辣烫里最好的部分"}],
+ t:"麻辣烫其实是外食里最容易配成健康餐的：多菜、一份主食、两片肉、一个蛋，汤不喝",
+ alt:"汤底选清汤，别加麻酱"},
+
+{n:"麻辣香锅",py:"ma la xiang guo",c:"dish",lv:[1,0,2,0,2],
+ parts:[{n:"炒制用油",lv:[0,0,2,0,2],s:"不吃",t:"香锅是炸完再炒，油量比火锅还高"},
+        {n:"午餐肉 / 培根 / 虾",lv:[1,1,2,0,2],s:"不吃或极少量"},
+        {n:"蔬菜 / 豆皮",lv:[0,0,0,0,0],s:"多选",t:"素菜在香锅里也被油裹住了，筷子夹起来沥一下"}],
+ t:"香锅 = 油炸 + 重油炒，是所有做法里最费油的一种，尽量别点"},
+
+{n:"酸菜鱼",py:"suan cai yu",al:"水煮鱼,烤鱼,藤椒鱼",c:"dish",lv:[1,0,2,0,2],
+ parts:[{n:"鱼肉",lv:[1,0,0,0,0],s:"100 g",t:"鱼肉本身没问题，是好蛋白"},
+        {n:"汤 / 红油",lv:[2,0,2,0,2],s:"不喝，别用汤泡饭",t:"鱼汤嘌呤高，水煮鱼的红油更是纯脂肪"},
+        {n:"酸菜 / 豆芽配菜",lv:[0,0,0,0,2],s:"可以吃",t:"酸菜钠高，吃菜不喝汤"}],
+ t:"吃鱼不喝汤，肉吃掉、汤留下，这一条对所有鱼火锅、烤鱼都适用"},
+
+{n:"烤鱼",py:"kao yu",c:"dish",lv:[1,0,2,0,2],
+ parts:[{n:"鱼肉",lv:[1,0,0,0,0],s:"100 g",t:"鱼肉是好东西"},
+        {n:"汤汁和红油",lv:[2,0,2,0,2],s:"不蘸不喝",t:"鱼在汤里泡着，越煮嘌呤越高"}],
+ t:"先把鱼夹出来吃，别让它一直泡在汤里"},
+
+{n:"烧烤",py:"shao kao",al:"烤串,羊肉串,牛肉串,大排档",c:"dish",lv:[1,0,2,0,2],
+ parts:[{n:"瘦肉串（牛肉/鸡翅/里脊）",lv:[1,0,1,0,1],s:"3–4 串",t:"选瘦的，别点五花和板筋"},
+        {n:"肥肉 / 五花 / 羊腰 / 板筋",lv:[2,1,2,0,1],s:"不吃",t:"腰子是内脏，嘌呤爆表"},
+        {n:"烤蔬菜 / 烤茄子 / 烤韭菜",lv:[0,0,1,0,1],s:"可以点",t:"茄子吸油严重，点烤青椒、烤金针菇更好"},
+        {n:"啤酒",lv:[0,0,0,0,0],f:"alcohol",s:"不喝",t:"烧烤配啤酒是尿酸的经典组合拳，必须拆开"}],
+ t:"烧烤最大的问题不是肉，是「烧烤 + 啤酒」这个组合。喝酒就别撸串，撸串就别喝酒",
+ alt:"把啤酒换成无糖气泡水"},
+
+{n:"炸鸡",py:"zha ji",al:"KFC,肯德基,炸鸡排,炸串",c:"dish",lv:[0,0,2,0,2],f:"fried",
+ t:"油炸裹粉 + 高盐，热量和饱和脂肪都顶格",s:"不吃",alt:"换烤鸡胸或汉堡去酱"},
+
+{n:"汉堡",py:"han bao",al:"麦辣鸡腿堡,双层芝士堡",c:"dish",lv:[0,1,2,1,2],
+ parts:[{n:"肉饼 / 炸鸡排",lv:[1,0,2,0,1],s:"一个",t:"选烤的不要炸的"},
+        {n:"酱料和芝士",lv:[0,1,2,1,1],s:"去掉",t:"酱和芝士是脂肪主力"},
+        {n:"面包和薯条",lv:[0,0,2,0,1],s:"薯条不吃",t:"面包精制碳水，薯条是油炸淀粉"}],
+ t:"去酱、去芝士、不要薯条、可乐换无糖，勉强能算一顿饭"},
+
+{n:"披萨",py:"pi sa",al:"pizza,比萨",c:"dish",lv:[0,1,2,1,2],s:"1 片",t:"芝士和香肠是脂肪和钠的集中营，选蔬菜款、薄底、1 片为止"},
+
+{n:"沙拉",py:"sha la",al:"轻食,减脂餐,蔬菜沙拉",c:"dish",lv:[0,0,1,0,1],
+ parts:[{n:"蔬菜",lv:[0,0,0,0,0],s:"随便吃"},
+        {n:"鸡胸 / 鸡蛋 / 虾",lv:[1,1,0,0,0],s:"一份",t:"蛋白够了就别再加"},
+        {n:"沙拉酱",lv:[0,0,2,1,1],s:"不用",t:"酱一放，轻食就变成热量炸弹"}],
+ t:"轻食的坑全在酱料上：油醋汁、柠檬汁、黑胡椒随便用，沙拉酱、千岛酱、凯撒酱别碰"},
+
+{n:"黄焖鸡",py:"huang men ji",al:"黄焖鸡米饭",c:"dish",lv:[1,0,2,0,2],
+ parts:[{n:"鸡肉",lv:[1,0,1,0,0],s:"去皮吃 100 g",t:"去皮"},
+        {n:"汤汁",lv:[2,0,1,0,2],s:"不拌饭",t:"黄焖的汤汁又咸又油，泡饭是最大的热量来源"},
+        {n:"米饭",lv:[0,0,0,0,0],s:"半碗",t:"黄焖鸡配的米饭通常是大碗"}],
+ t:"鸡可以吃，汤汁别拌饭，米饭减半"},
+
+{n:"宫保鸡丁",py:"gong bao ji ding",al:"鱼香肉丝,京酱肉丝",c:"dish",lv:[1,0,1,1,2],
+ t:"糖和油都不少，酱汁是主要负担",s:"小份，配大量青菜",alt:"换成白灼/清蒸的菜"},
+
+{n:"盖饭",py:"gai fan",al:"盖浇饭,快餐,工作餐,盒饭",c:"dish",lv:[1,0,1,0,1],
+ parts:[{n:"米饭",lv:[0,0,0,0,0],s:"只吃一半",t:"盖饭的饭通常一大盘，先去掉三分之一"},
+        {n:"浇头（肉和酱汁）",lv:[1,0,1,1,2],s:"少吃酱汁",t:"酱汁拌饭是油和糖"},
+        {n:"青菜",lv:[0,0,0,0,0],s:"另外加一份",t:"盖饭普遍缺菜，单点一份青菜"}],
+ t:"盖饭的问题永远是「饭太多、菜太少、汁太咸」：饭减半、加一份青菜、汁不拌饭"},
+
+{n:"骨头汤",py:"gu tou tang",al:"大骨汤,老火靓汤,猪骨汤,高汤",c:"soup",lv:[2,0,2,0,1],f:"soup_meat",s:"不喝",t:"骨头汤不补钙，补的是嘌呤和脂肪。煲得越久，嘌呤越高",alt:"想喝汤就喝清淡的蔬菜蛋花汤，且不喝太多"},
+{n:"鸡汤",py:"ji tang",al:"老母鸡汤,炖鸡汤,乌鸡汤",c:"soup",lv:[2,0,2,0,1],f:"soup_meat",s:"不喝",t:"鸡的嘌呤有相当一部分溶进汤里，肉可以吃，汤别喝"},
+{n:"鱼汤",py:"yu tang",al:"鲫鱼汤,鱼头汤",c:"soup",lv:[2,0,1,0,1],f:"soup_meat",s:"不喝",t:"奶白色的汤是乳化脂肪，不是营养"},
+{n:"羊肉汤",py:"yang rou tang",al:"羊杂汤,羊汤",c:"soup",lv:[2,0,2,0,2],f:"soup_meat",s:"不喝",t:"羊杂是内脏，汤更是嘌呤浓缩液"},
+{n:"卤煮",py:"lu zhu",al:"卤煮火烧,爆肚,炒肝",c:"soup",lv:[2,2,1,0,2],f:"organ soup_meat",s:"不吃",t:"内脏 + 老汤，三高人群的禁区"},
+{n:"紫菜蛋花汤",py:"zi cai dan hua tang",al:"蛋花汤,青菜汤,番茄蛋汤",c:"soup",lv:[0,0,0,0,1],s:"一碗",t:"清淡蔬菜汤可以喝，少放盐"},
+{n:"味噌汤",py:"wei ceng tang",al:"miso汤",c:"soup",lv:[1,0,0,0,2],s:"一小碗",t:"钠高，别喝完"},
+
+{n:"水果",py:"shui guo",c:"fruit",lv:[0,0,0,1,0],s:"一天 200–350 g，分两次吃",t:"水果可以吃，但果糖会同时推高甘油三酯和尿酸，所以是「限量」不是「随便吃」。选草莓、柚子、苹果、蓝莓，避开荔枝、桂圆、榴莲、葡萄、芒果，别榨汁"},
+{n:"蔬菜",py:"shu cai",al:"青菜,绿叶菜",c:"veg",lv:[0,0,0,0,0],s:"一天 300–500 g，每餐一大盘",t:"蔬菜是你可以放开吃的东西，唯一要注意的是做法：蒸煮凉拌最好，油焖、干锅、地三鲜就毁了"},
+{n:"早餐",py:"zao can",c:"dish",lv:[0,1,1,1,1],s:"一个蛋 + 一杯脱脂奶 + 一份全麦主食 + 一份蔬菜",t:"早餐模板：水煮蛋 1 个、无糖酸奶或脱脂奶、燕麦或全麦面包、一个番茄或黄瓜。别吃油条、甜豆浆、奶油面包"}
+);
+
+// 未收录食物的类别兜底规则：按关键词顺序命中第一条
+window.CATS = [
+{k:"油炸,炸鸡,炸串,天妇罗,酥皮,酥,煎炸,油淋,干锅",n:"油炸类",lv:[0,0,2,0,2],s:"不吃",t:"油炸 = 大量油脂 + 精制碳水，甘油三酯最怕的组合"},
+{k:"汤,煲,骨汤,高汤,浓汤,老火,炖汤,汤底,火锅汤",n:"汤类",lv:[2,0,2,0,2],s:"不喝汤",t:"嘌呤和油脂都溶进汤里，炖得越久越浓。肉可以吃，汤一口别碰"},
+{k:"肝,肾,腰,脑,肚,肠,心,肺,血,杂,内脏,下水",n:"动物内脏",lv:[2,2,1,0,1],s:"不吃",t:"嘌呤和胆固醇基本都是顶格，是三高人群的第一禁区"},
+{k:"贝,蛤,蚶,蚝,蚬,扇贝,蚌,蛏,鲍,海螺",n:"贝类海鲜",lv:[2,1,0,0,1],s:"不吃",t:"贝类是嘌呤密度最高的一类食物"},
+{k:"鱼干,虾米,海米,虾皮,干贝,鱿鱼丝,鱼片干,干货",n:"脱水海产",lv:[2,1,0,0,2],s:"不吃",t:"脱水后嘌呤和盐都浓缩了，一小把就顶一大盘"},
+{k:"酒,啤酒,白酒,红酒,洋酒,威士忌,清酒,酒精,鸡尾酒",n:"酒精饮料",lv:[0,0,0,0,0],f:"alcohol",s:"不喝",t:"酒精直接阻断尿酸排泄，还升甘油三酯；啤酒另外自带嘌呤"},
+{k:"可乐,雪碧,汽水,奶茶,果汁,饮料,甜饮,沙冰,奶盖",n:"含糖饮料",lv:[0,0,1,2,0],f:"sweet",s:"不喝",t:"果糖在肝脏里直接转成甘油三酯，同时生成尿酸，是双杀"},
+{k:"蛋糕,甜点,甜品,糖果,巧克力,冰激凌,冰淇淋,布丁,慕斯,甜甜圈",n:"甜点糖果",lv:[0,1,2,2,0],s:"不吃",t:"糖 + 饱和脂肪的组合"},
+{k:"火腿,培根,香肠,腊肉,腊肠,午餐肉,肉松,肉脯,罐头,加工肉",n:"加工肉制品",lv:[1,1,2,0,2],f:"processed",s:"不吃",t:"肥肉 + 盐 + 添加剂，钠和饱和脂肪双高"},
+{k:"腌,酱菜,咸菜,泡菜,酸菜,榨菜,咸鱼,咸蛋,腐乳",n:"腌制食品",lv:[0,0,0,0,2],s:"不吃或极少量",t:"钠爆表，伤血管伤肾，间接影响尿酸排出"},
+{k:"火锅,涮,串串,麻辣烫,冒菜,钵钵鸡,麻辣香锅",n:"火锅串串类",lv:[1,0,2,0,2],s:"可以吃，但选料决定一切",t:"清汤锅、多下蔬菜豆腐、少下肥肉内脏、不喝汤、蘸料换成醋碟"},
+{k:"烧烤,烤串,烤肉,铁板,大排档",n:"烧烤类",lv:[1,0,2,0,2],s:"3–4 串瘦肉",t:"选瘦肉、不配啤酒、不点腰子和板筋"},
+{k:"坚果,瓜子,花生,核桃,杏仁,腰果,开心果",n:"坚果种子",lv:[0,0,1,0,0],s:"一天 15 g，倒出来定量",t:"脂肪以不饱和为主对血脂有利，但热量密度极高，必须称重"},
+{k:"蛋,鸡蛋,鸭蛋,蛋黄,鹌鹑蛋",n:"蛋类",lv:[0,2,1,0,0],s:"一天 1 个；严控期只吃蛋白",t:"膳食胆固醇几乎全在蛋黄里，你的 LDL 在临界值，别吃三个"},
+{k:"鸡,鸭,鹅,禽,鸽子",n:"禽肉",lv:[1,0,1,0,0],s:"一餐 100 g，去皮",t:"去皮吃，鸡胸肉是三高人群最友好的肉"},
+{k:"猪,牛,羊,肉,排骨,牛排,羊排,五花,肥牛",n:"红肉",lv:[1,0,2,0,0],s:"一餐 50–75 g",t:"中嘌呤 + 饱和脂肪，称重吃；肥肉部分直接剔掉"},
+{k:"鱼,虾,蟹,海鲜,三文鱼,金枪鱼,鳕鱼",n:"鱼虾类",lv:[1,1,0,0,0],s:"一餐 75–100 g",t:"比红肉友好，蒸煮最好；贝类和内脏类另算"},
+{k:"豆腐,豆浆,豆干,腐竹,豆制品,毛豆,黄豆",n:"豆制品",lv:[0,0,0,0,0],s:"常吃",t:"新证据表明豆制品不升尿酸，用它替换掉一半的肉"},
+{k:"奶,牛奶,酸奶,乳,芝士,奶酪",n:"奶制品",lv:[0,0,1,0,0],s:"一天 250–300 ml",t:"奶类有助于尿酸排泄，选脱脂或低脂、无糖的"},
+{k:"米,面,粉,饭,馒头,面包,主食,粥,饼,糕,点心",n:"主食",lv:[0,0,0,0,0],s:"每餐一小碗",t:"精制主食升糖快，会转成甘油三酯。一半换成杂粮，且别吃第二碗"},
+{k:"蔬菜,菜,青菜,瓜,萝卜,菌,菇,笋",n:"蔬菜",lv:[0,0,0,0,0],s:"一餐一大盘",t:"放心吃，唯一要注意的是做法：蒸、煮、白灼、凉拌最好"},
+{k:"水果,果,瓜,莓,桃,梨,橘,橙",n:"水果",lv:[0,0,0,1,0],s:"一天 200–350 g",t:"可以吃但要限量，果糖会升甘油三酯和尿酸。别榨汁"}
+];
+
+(function () {
+  "use strict";
+
+  var LV_NAME = ["低", "中", "高"];
+  var LV_COLOR = ["#3B6D11", "#BA7517", "#A32D2D"];
+  var LV_FILL = ["#639922", "#EF9F27", "#E24B4A"];
+  var VERDICT = [
+    { t: "放心吃", c: "#0F6E56", b: "#E1F5EE", tip: "三个指标都不构成负担，按正常份量吃" },
+    { t: "能吃，限量", c: "#854F0B", b: "#FAEEDA", tip: "可以吃，但必须按份量来，别放开吃" },
+    { t: "不建议吃", c: "#791F1F", b: "#FCEBEB", tip: "对你的三项指标有明显负担，忍一下" }
+  ];
+
+  var PROFILE_DEFAULT = { ua: 460, ldl: 3.36, tg: 1.64, mode: "standard" };
+  var profile = load("hf-profile", PROFILE_DEFAULT);
+  var custom = load("hf-custom", {});
+
+  function load(k, d) {
+    try { var v = JSON.parse(localStorage.getItem(k)); return v && typeof v === "object" ? v : d; } catch (e) { return d; }
+  }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  // ---------- 判定引擎 ----------
+  function flags(f) { return (f.f || "").split(/\s+/); }
+
+  function axesOf(f) {
+    var lv = f.lv || [0, 0, 0, 0, 0];
+    var fl = flags(f);
+    var alcohol = fl.indexOf("alcohol") >= 0;
+    var meatSoup = fl.indexOf("soup_meat") >= 0;
+    // LDL 受饱和脂肪的影响大于膳食胆固醇，所以胆固醇这一级权重降一档
+    var ua = lv[0], chol = Math.max(lv[2], Math.max(0, lv[1] - 1)), tg = lv[3];
+    if (alcohol) { ua = 2; tg = 2; }
+    if (meatSoup) { ua = Math.max(ua, 2); chol = Math.max(chol, 1); }
+    if (!alcohol && (f.gi || 0) >= 75 && tg === 0) tg = 1;
+    return { ua: ua, chol: chol, tg: tg, na: lv[4] };
+  }
+
+  function levelOf(a) { return Math.max(a.ua, a.chol, a.tg); }
+
+  function reasons(f, a) {
+    var r = [], fl = flags(f);
+    if (fl.indexOf("alcohol") >= 0) r.push("酒精在肾脏和尿酸抢排泄通道，血尿酸立刻升高，同时直接推高甘油三酯");
+    else if (a.ua === 2) r.push("嘌呤高（> 150 mg/100 g），是尿酸最直接的食物来源");
+    else if (a.ua === 1) r.push("嘌呤中等（50–150 mg/100 g），可以吃但要称重算量");
+    if (a.chol === 2) r.push("饱和脂肪高，是推高 LDL 的主因");
+    else if (a.chol === 1 && (f.lv || [])[1] === 2) r.push("膳食胆固醇很高（> 200 mg/100 g），影响虽不如饱和脂肪，仍要数着个数吃");
+    else if (a.chol === 1) r.push("有一定饱和脂肪，放开吃会累到 LDL");
+    if (a.tg === 2) r.push("糖或酒精很高，甘油三酯对这两样最敏感");
+    else if (a.tg === 1) r.push("精制碳水或糖偏多，多余糖分会在肝脏转成甘油三酯");
+    if (fl.indexOf("soup_meat") >= 0) r.push("嘌呤和浮油都溶进了汤里，越熬越浓");
+    if (fl.indexOf("fried") >= 0) r.push("油炸额外带来大量油脂和反复加热的油");
+    if (fl.indexOf("processed") >= 0 || fl.indexOf("organ") >= 0) r.push("加工或内脏类食物，钠、嘌呤、胆固醇往往同时偏高");
+    if (a.na === 2) r.push("钠很高，伤血管也伤肾，间接影响尿酸排出");
+    return r;
+  }
+
+  function axisLabel(a) {
+    return [
+      { k: "血尿酸", v: a.ua, sub: profile.ua + " μmol/L", w: "UA" },
+      { k: "坏胆固醇 LDL", v: a.chol, sub: profile.ldl + " mmol/L", w: "LDL" },
+      { k: "甘油三酯", v: a.tg, sub: profile.tg + " mmol/L", w: "TG" }
+    ];
+  }
+
+  // ---------- 搜索 ----------
+  var INDEX = [];
+  function initials(py) {
+    return (py || "").split(/\s+/).map(function (s) { return s.charAt(0); }).join("");
+  }
+  function buildIndex() {
+    INDEX = [];
+    window.FOODS.forEach(function (f, i) {
+      var keys = [f.n].concat((f.al || "").split(",").filter(Boolean));
+      var py = (f.py || "").replace(/\s+/g, "");
+      var ini = initials(f.py);
+      INDEX.push({ i: i, n: f.n, keys: keys, py: py, ini: ini });
+    });
+  }
+
+  function search(q) {
+    q = (q || "").trim().toLowerCase().replace(/\s+/g, "");
+    if (!q) return [];
+    var hits = [];
+    INDEX.forEach(function (it) {
+      var best = -1;
+      it.keys.forEach(function (k) {
+        k = k.toLowerCase();
+        if (k === q) best = best < 0 ? 100 : best;
+        else if (k.indexOf(q) === 0) best = Math.max(best, 80 - k.length * 0.1);
+        else if (k.indexOf(q) > 0) best = Math.max(best, 50);
+      });
+      if (best < 0 && it.py && it.py.indexOf(q) === 0) best = 70;
+      if (best < 0 && it.ini && it.ini.indexOf(q) === 0) best = 60;
+      if (best >= 0) hits.push({ i: it.i, s: best });
+    });
+    hits.sort(function (a, b) { return b.s - a.s; });
+    return hits.map(function (h) { return window.FOODS[h.i]; });
+  }
+
+  function catFallback(q) {
+    q = (q || "").trim();
+    for (var i = 0; i < window.CATS.length; i++) {
+      var ks = window.CATS[i].k.split(",");
+      for (var j = 0; j < ks.length; j++) {
+        if (q.indexOf(ks[j]) >= 0) {
+          var c = window.CATS[i];
+          return { n: q, c: c.n, lv: c.lv, f: c.f, s: c.s, t: c.t, approx: c.n };
+        }
+      }
+    }
+    return null;
+  }
+
+  // ---------- 渲染 ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); };
+
+  function bar(v) {
+    return '<div class="bar"><div class="bar-fill" style="width:' + (v === 0 ? 8 : v === 1 ? 52 : 100) + '%;background:' + LV_FILL[v] + '"></div></div>';
+  }
+
+  function axisHtml(a) {
+    var out = '<div class="axes">';
+    axisLabel(a).forEach(function (x) {
+      out += '<div class="axe"><div class="axe-top"><span class="axe-k">' + x.k + '</span>' +
+        '<span class="axe-v" style="color:' + LV_COLOR[x.v] + '">' + LV_NAME[x.v] + '负担</span></div>' +
+        bar(x.v) + '<div class="axe-sub">你的' + x.w + '：' + x.sub + '</div></div>';
+    });
+    return out + '</div>';
+  }
+
+  function partRow(p) {
+    var a = axesOf(p);
+    var l = levelOf(a);
+    return '<div class="part"><span class="dot" style="background:' + LV_FILL[l] + '"></span>' +
+      '<div class="part-main"><div class="part-n">' + esc(p.n) + '</div>' +
+      (p.t ? '<div class="part-t">' + esc(p.t) + '</div>' : '') + '</div>' +
+      '<div class="part-s">' + esc(p.s || (l === 2 ? "不吃" : l === 1 ? "限量" : "可以")) + '</div></div>';
+  }
+
+  function card(f, opts) {
+    opts = opts || {};
+    var a = axesOf(f);
+    var l = levelOf(a);
+    var v = VERDICT[l];
+    var rs = reasons(f, a);
+    var html = '<div class="card result">';
+
+    if (opts.approx) {
+      html += '<div class="approx">库里没有「' + esc(opts.approxName || f.n) + '」，按「' + esc(f.c) + '」这一类给你建议</div>';
+    }
+
+    html += '<div class="verdict" style="background:' + v.b + '">' +
+      '<span class="dot big" style="background:' + LV_FILL[l] + '"></span>' +
+      '<div><div class="verdict-t" style="color:' + v.c + '">' + v.t + '</div>' +
+      '<div class="verdict-s" style="color:' + v.c + '">' + esc(f.n) + ' · ' + v.tip + '</div></div></div>';
+
+    html += axisHtml(a);
+
+    if (f.parts && f.parts.length) {
+      html += '<div class="sec-t">拆开看，每一部分分别怎么对待</div><div class="parts">' +
+        f.parts.map(partRow).join("") + '</div>';
+    }
+
+    html += '<div class="sec-t">' + (l === 2 ? "实在要吃的话" : "能吃多少") + '</div><div class="portion">' + esc(f.s || (l === 2 ? "不吃" : "正常份量")) + '</div>';
+    if (profile.mode === "strict" && l >= 1) {
+      html += '<div class="strict">严格模式：上述份量减半，频次也减半；黄灯食物按红灯对待</div>';
+    }
+
+    if (rs.length) {
+      html += '<div class="sec-t">为什么</div><ul class="why">' + rs.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + '</ul>';
+    }
+    if (f.t) html += '<div class="sec-t">关键提醒</div><div class="note">' + esc(f.t) + '</div>';
+    if (f.alt) html += '<div class="sec-t">换成什么</div><div class="note alt">' + esc(f.alt) + '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function noHit(q) {
+    return '<div class="card result"><div class="verdict" style="background:#F1EFE8">' +
+      '<span class="dot big" style="background:#888780"></span><div>' +
+      '<div class="verdict-t" style="color:#2C2C2A">库里没有这个</div>' +
+      '<div class="verdict-s" style="color:#444441">按保守原则处理，或者直接告诉我它属于哪一类</div></div></div>' +
+      '<div class="sec-t">没收录时，按这四条保守原则判断</div><ul class="why">' +
+      '<li>熬久的汤、内脏、贝类：一律不吃</li>' +
+      '<li>任何酒：一律不喝</li>' +
+      '<li>油炸 + 精制碳水（油条、薯片、甜点）：一律不吃</li>' +
+      '<li>甜饮料和果汁：一律不喝，果糖是甘油三酯和尿酸的双杀</li></ul>' +
+      '<div class="sec-t">它不是上面几类的话，通常这么办</div>' +
+      '<div class="note">瘦肉和鱼虾每餐 50–100 g 称重吃；蔬菜放开吃；主食一小碗；水果一天 200–350 g。拿不准就按「能吃，限量」处理。</div>' +
+      '<div class="catpick" id="catpick"><span class="catpick-l">把它归到某一类：</span>' +
+      window.CATS.slice(0, 12).map(function (c, i) { return '<button class="chip sm" data-cat="' + i + '">' + esc(c.n) + '</button>'; }).join("") +
+      '</div></div>';
+  }
+
+  function renderQuery(q) {
+    var box = $("out");
+    if (!q) { box.innerHTML = emptyState(); return; }
+    var res = search(q);
+    if (custom[q]) {
+      var c = window.CATS[custom[q]];
+      res = [{ n: q, c: c.n, lv: c.lv, f: c.f, s: c.s, t: c.t }].concat(res);
+    }
+    if (res.length === 0) {
+      var cf = catFallback(q);
+      if (cf) { box.innerHTML = card(cf, { approx: true, approxName: q }); bindCatPick(q); return; }
+      box.innerHTML = noHit(q); bindCatPick(q); return;
+    }
+    if (res.length === 1) { box.innerHTML = card(res[0]); bindCatPick(q); return; }
+    var html = '<div class="card result"><div class="sec-t">找到 ' + res.length + ' 个，点一个看结论</div><div class="pick">';
+    res.slice(0, 12).forEach(function (f) {
+      var a = axesOf(f), l = levelOf(a);
+      html += '<div class="pick-row" data-n="' + esc(f.n) + '"><span class="dot" style="background:' + LV_FILL[l] + '"></span>' +
+        '<span class="pick-n">' + esc(f.n) + '</span><span class="pick-c">' + esc(f.c ? CAT_CN[f.c] || f.c : "") + '</span></div>';
+    });
+    html += '</div></div>';
+    box.innerHTML = html;
+    Array.prototype.forEach.call(box.querySelectorAll(".pick-row"), function (el) {
+      el.onclick = function () {
+        var name = el.getAttribute("data-n");
+        var f = window.FOODS.filter(function (x) { return x.n === name; })[0];
+        $("q").value = name;
+        $("out").innerHTML = card(f);
+        window.scrollTo(0, 0);
+      };
+    });
+  }
+
+  function bindCatPick(q) {
+    var el = $("catpick");
+    if (!el) return;
+    Array.prototype.forEach.call(el.querySelectorAll("[data-cat]"), function (b) {
+      b.onclick = function () {
+        custom[q] = parseInt(b.getAttribute("data-cat"), 10);
+        save("hf-custom", custom);
+        renderQuery(q);
+      };
+    });
+  }
+
+  var CAT_CN = { grain: "主食", meat: "肉", organ: "内脏", egg: "蛋", fish: "鱼", shellfish: "海鲜", bean: "豆制品", veg: "蔬菜", fruit: "水果", dairy: "奶", nut: "坚果", drink: "饮料", snack: "零食", oil: "调味油脂", soup: "汤", dish: "菜式", processed: "加工食品" };
+
+  var QUICK = ["牛肉面", "火锅", "辣条", "鸡蛋", "啤酒", "水果", "米饭", "炒菜", "豆腐", "虾", "牛奶", "串串"];
+
+  function emptyState() {
+    return '<div class="card result empty">' +
+      '<div class="verdict" style="background:#E6F1FB"><span class="dot big" style="background:#378ADD"></span><div>' +
+      '<div class="verdict-t" style="color:#0C447C">输入食物名，立刻告诉你能不能吃</div>' +
+      '<div class="verdict-s" style="color:#185FA5">支持中文名、别名、拼音首字母，比如「nrM」也能搜到牛肉面</div></div></div>' +
+      '<div class="sec-t">你的指标</div><div class="metrics">' +
+      '<div class="metric"><div class="m-l">血尿酸 UA</div><div class="m-v">460</div><div class="m-s">偏高，上限 420</div></div>' +
+      '<div class="metric"><div class="m-l">坏胆固醇 LDL</div><div class="m-v">3.36</div><div class="m-s">临界，上限 3.4</div></div>' +
+      '<div class="metric"><div class="m-l">甘油三酯 TG</div><div class="m-v">1.64</div><div class="m-s">临界，上限 1.7</div></div>' +
+      '</div><div class="note">三项都在临界或超标，饮食控制是最直接有效的手段。尿酸是其中最紧的一条。</div>' +
+      '<div class="sec-t">点一下试试</div><div class="quick">' +
+      QUICK.map(function (q) { return '<button class="chip" data-q="' + q + '">' + q + '</button>'; }).join("") +
+      '</div></div>';
+  }
+
+  // ---------- 启动 ----------
+  function init() {
+    buildIndex();
+    $("out").innerHTML = emptyState();
+    bindQuick();
+    var qi = $("q");
+    qi.addEventListener("input", function () { renderQuery(qi.value.trim()); });
+    qi.addEventListener("keydown", function (e) { if (e.key === "Enter") { qi.blur(); renderQuery(qi.value.trim()); } });
+    $("setbtn").onclick = function () { $("sheet").classList.toggle("show"); };
+    $("closebtn").onclick = function () { $("sheet").classList.remove("show"); };
+    $("modesel").value = profile.mode;
+    $("modesel").onchange = function () { profile.mode = this.value; save("hf-profile", profile); renderQuery($("q").value.trim()); };
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+    }
+  }
+
+  function bindQuick() {
+    Array.prototype.forEach.call(document.querySelectorAll(".chip[data-q]"), function (b) {
+      b.onclick = function () { $("q").value = b.getAttribute("data-q"); renderQuery($("q").value); };
+    });
+  }
+
+  window.__HF = { search: search, catFallback: catFallback, axesOf: axesOf, levelOf: levelOf, buildIndex: buildIndex, card: card, renderQuery: renderQuery, init: init, VERDICT: VERDICT };
+
+  window.addEventListener("DOMContentLoaded", init);
+})();
+
+</script>
+</body>
+</html>
