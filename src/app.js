@@ -107,6 +107,40 @@
     return hits.map(function (h) { return window.FOODS[h.i]; });
   }
 
+  // 「做法 + 食材」自动拆解：莴笋炒肉 → 莴笋 + 猪肉 + 炒制
+  function compose(q) {
+    if (!window.COOKS || !window.MAINS) return null;
+    var cook = null, rest = q, i, j;
+    for (i = 0; i < window.COOKS.length && !cook; i++) {
+      var ks = window.COOKS[i].k.split(",");
+      for (j = 0; j < ks.length; j++) {
+        if (q.indexOf(ks[j]) >= 0) { cook = window.COOKS[i]; rest = q.split(ks[j]).join(""); break; }
+      }
+    }
+    if (!window.MAINS_SORTED) {
+      window.MAINS_SORTED = window.MAINS.slice().sort(function (a, b) { return b.length - a.length; });
+    }
+    var found = [], pool = rest;
+    for (i = 0; i < window.MAINS_SORTED.length && found.length < 3; i++) {
+      var w = window.MAINS_SORTED[i];
+      if (pool.indexOf(w) >= 0) { found.push(w); pool = pool.split(w).join(""); }
+    }
+    if (!found.length) return null;
+    var base = [0, 0, 0, 0, 0], parts = [];
+    found.forEach(function (word) {
+      var r = search(word)[0];
+      if (!r) return;
+      parts.push({ n: r.n, lv: r.lv, s: r.s, t: r.t });
+      for (var k = 0; k < 5; k++) base[k] = Math.max(base[k], r.lv[k] || 0);
+    });
+    if (!parts.length) return null;
+    if (cook) {
+      parts.push({ n: "做法：" + cook.n, lv: cook.lv, s: "", t: cook.t });
+      for (var k2 = 0; k2 < 5; k2++) base[k2] = Math.max(base[k2], cook.lv[k2] || 0);
+    }
+    return { n: q, c: "做法 + 食材自动拆解", lv: base, s: "按下面每一项分别控制", t: cook ? cook.t : "按食材分别看份量", parts: parts };
+  }
+
   function catFallback(q) {
     q = (q || "").trim();
     for (var i = 0; i < window.CATS.length; i++) {
@@ -157,7 +191,7 @@
     var html = '<div class="card result">';
 
     if (opts.approx) {
-      html += '<div class="approx">库里没有「' + esc(opts.approxName || f.n) + '」，按「' + esc(f.c) + '」这一类给你建议</div>';
+      html += '<div class="approx">库里没有「' + esc(opts.approxName || f.n) + '」，按「' + esc(opts.approxLabel || f.c) + '」给你建议</div>';
     }
 
     html += '<div class="verdict" style="background:' + v.b + '">' +
@@ -203,6 +237,16 @@
       '</div></div>';
   }
 
+  function exactHit(res, q) {
+    for (var i = 0; i < res.length; i++) {
+      var f = res[i];
+      if (f.n === q) return f;
+      var al = (f.al || "").split(",");
+      for (var j = 0; j < al.length; j++) if (al[j] === q) return f;
+    }
+    return null;
+  }
+
   function renderQuery(q) {
     var box = $("out");
     if (!q) { box.innerHTML = emptyState(); return; }
@@ -212,11 +256,25 @@
       res = [{ n: q, c: c.n, lv: c.lv, f: c.f, s: c.s, t: c.t }].concat(res);
     }
     if (res.length === 0) {
+      var comp = compose(q);
+      if (comp) { box.innerHTML = card(comp, { approx: true, approxName: q, approxLabel: "做法 + 食材自动拆解" }); bindCatPick(q); return; }
       var cf = catFallback(q);
       if (cf) { box.innerHTML = card(cf, { approx: true, approxName: q }); bindCatPick(q); return; }
       box.innerHTML = noHit(q); bindCatPick(q); return;
     }
-    if (res.length === 1) { box.innerHTML = card(res[0]); bindCatPick(q); return; }
+    var ex = res.length > 1 ? exactHit(res, q) : null;
+    if (ex) {
+      box.innerHTML = card(ex, ex.n === q ? {} : { approx: true, approxName: q, approxLabel: ex.n });
+      bindCatPick(q);
+      return;
+    }
+    if (res.length === 1) {
+      var f0 = res[0];
+      var same = f0.n === q || f0.n.indexOf(q) >= 0 || q.indexOf(f0.n) >= 0;
+      box.innerHTML = card(f0, same ? {} : { approx: true, approxName: q, approxLabel: f0.n });
+      bindCatPick(q);
+      return;
+    }
     var html = '<div class="card result"><div class="sec-t">找到 ' + res.length + ' 个，点一个看结论</div><div class="pick">';
     res.slice(0, 12).forEach(function (f) {
       var a = axesOf(f), l = levelOf(a);
@@ -331,7 +389,7 @@
     });
   }
 
-  window.__HF = { search: search, catFallback: catFallback, axesOf: axesOf, levelOf: levelOf, buildIndex: buildIndex, card: card, renderQuery: renderQuery, init: init, VERDICT: VERDICT };
+  window.__HF = { search: search, catFallback: catFallback, compose: compose, axesOf: axesOf, levelOf: levelOf, buildIndex: buildIndex, card: card, renderQuery: renderQuery, init: init, VERDICT: VERDICT };
 
   window.addEventListener("DOMContentLoaded", init);
 })();
