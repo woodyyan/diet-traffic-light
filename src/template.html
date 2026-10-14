@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>三高饮食红绿灯</title>
+<title>饮食红绿灯 · 尿酸 血脂 血糖</title>
 <meta name="theme-color" content="#FAFAFA">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="饮食红绿灯">
+<meta name="description" content="输入食物名，按血尿酸、LDL、甘油三酯、血糖四项给出红绿灯">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <style>
@@ -37,6 +38,7 @@ input#q:focus{border-color:#378ADD}
 .bar{height:6px;border-radius:3px;background:#F1EFE8;margin-top:5px;overflow:hidden}
 .bar-fill{height:6px;border-radius:3px}
 .axe-sub{font-size:11px;color:#86868B;margin-top:4px}
+.axe.off{opacity:.55}
 .sec-t{font-size:12px;color:#86868B;margin:16px 0 8px;letter-spacing:.2px}
 .parts{border:.5px solid #E5E5EA;border-radius:12px;overflow:hidden}
 .part{display:flex;align-items:flex-start;gap:9px;padding:11px 12px;border-bottom:.5px solid #E5E5EA}
@@ -58,7 +60,7 @@ input#q:focus{border-color:#378ADD}
 .chip.sm{font-size:12px;padding:5px 10px;margin:4px 4px 0 0}
 .catpick{margin-top:14px;border-top:.5px solid #E5E5EA;padding-top:10px}
 .catpick-l{font-size:12px;color:#86868B;display:block;margin-bottom:4px}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
 .metric{background:#F5F5F7;border-radius:12px;padding:12px}
 .m-l{font-size:11px;color:#86868B}
 .m-v{font-size:22px;font-weight:600;margin-top:2px;letter-spacing:-.5px}
@@ -101,8 +103,11 @@ footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-he
     <div class="sh-row"><span>血尿酸 UA（μmol/L）</span><input class="num" id="uaIn" type="number" step="1" inputmode="decimal"></div>
     <div class="sh-row"><span>坏胆固醇 LDL（mmol/L）</span><input class="num" id="ldlIn" type="number" step="0.01" inputmode="decimal"></div>
     <div class="sh-row"><span>甘油三酯 TG（mmol/L）</span><input class="num" id="tgIn" type="number" step="0.01" inputmode="decimal"></div>
+    <div class="sh-row"><span>空腹血糖 GLU（mmol/L）</span><input class="num" id="gluIn" type="number" step="0.01" inputmode="decimal"></div>
+    <div class="sh-row"><span>把血糖轴计入总判定</span><input type="checkbox" id="gluOnIn"></div>
     <div class="disclaim">
-      参考上限：UA 420 μmol/L、LDL 3.4 mmol/L、TG 1.7 mmol/L。填了数值后，每条食物的三条轴会标上你的实测值。<br>
+      参考上限：UA 420 μmol/L、LDL 3.4 mmol/L、TG 1.7 mmol/L、空腹血糖 6.1 mmol/L。填了数值后，每条食物的四条轴会标上你的实测值。<br>
+      血糖轴看的是升糖速度（添加糖 + 升糖指数 GI）：白米白面和含糖饮料会亮黄或红灯，杂粮、豆类和大多数蔬菜还是绿灯。介意主食被判黄灯的话，可以把上面「血糖轴计入总判定」关掉，四条轴依然显示，只是不参与总红绿灯。<br>
       这些数值和你的查询记录都只存在这台设备上，不上传、不同步。<br>
       判定依据：《中国食物成分表》常见食物嘌呤与胆固醇分类、高尿酸血症与血脂异常相关膳食共识的通用分级（嘌呤低 &lt;50、中 50–150、高 &gt;150 mg/100g）。<br>
       本工具只做日常膳食参考，不替代医嘱。痛风急性发作期、甘油三酯超过 5.6 mmol/L 时请遵医嘱，本工具的常规建议不适用。<br>
@@ -113,7 +118,7 @@ footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-he
 
   <header>
     <div>
-      <h1>三高饮食红绿灯</h1>
+      <h1>饮食红绿灯</h1>
       <div class="sub" id="hdr">能不能吃、吃多少、为什么</div>
     </div>
     <button class="iconbtn" id="setbtn">≡</button>
@@ -135,8 +140,9 @@ footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-he
       <div class="pack-row"><span>糖</span><span><input class="num" id="sugIn" type="number" step="0.1" inputmode="decimal" placeholder="0"><span class="u">g</span></span></div>
       <div class="pack-row"><span>钠</span><span><input class="num" id="naIn" type="number" step="1" inputmode="decimal" placeholder="0"><span class="u">mg</span></span></div>
       <label class="pack-chk"><input type="checkbox" id="meatIn"> 配料里有肉粉 / 海鲜 / 酵母提取物 / 肉松</label>
+      <label class="pack-chk"><input type="checkbox" id="starchIn"> 是主食 / 淀粉类（饼干、薯片、麦片、米粉、面包）</label>
       <div id="packout" style="margin-top:12px"></div>
-      <div class="pack-note" style="margin-top:10px">判据：饱和脂肪 &gt; 5 g、糖 &gt; 15 g、钠 &gt; 800 mg，任一项即红灯；过半即黄灯</div>
+      <div class="pack-note" style="margin-top:10px">判据：饱和脂肪 &gt; 5 g、糖 &gt; 15 g、钠 &gt; 800 mg，任一项即红灯；过半即黄灯。糖同时也进血糖轴，勾了淀粉类再升一档</div>
     </div>
   </div>
 

@@ -38,7 +38,7 @@ for (const q of cases) {
   const r = resolve(q);
   if (!r) { console.log(`  ${q.padEnd(10)} → 无命中，走保守原则`); continue; }
   const axes = HF.axesOf(r.f), lvl = HF.levelOf(axes);
-  console.log(`  ${q.padEnd(10)} → ${String(r.f.n).padEnd(8)} [${r.src}] ${V[lvl]}灯  UA${axes.ua} LDL${axes.chol} TG${axes.tg}  ${HF.VERDICT[lvl].t}`);
+  console.log(`  ${q.padEnd(10)} → ${String(r.f.n).padEnd(8)} [${r.src}] ${V[lvl]}灯  UA${axes.ua} LDL${axes.chol} TG${axes.tg} GLU${axes.glu}  ${HF.VERDICT[lvl].t}`);
 }
 
 // 全员自检：每条都必须能算出等级、且含中文名
@@ -54,6 +54,8 @@ console.log("\n条目总数:", window.FOODS.length, "| 类别兜底:", window.CA
 const expect = { 辣条: 2, 啤酒: 2, 猪肝: 2, 生蚝: 2, 果汁: 2, 米饭: 1, 豆腐: 0, 水: 0, 牛奶: 0, 牛肉面: 1, 鸡蛋: 1, 火锅: 1, 鸡胸肉: 1, 蛋黄: 2, 黄油: 2, 苹果: 1, 西兰花: 0,
   鸡汤: 2, 水煮肉片: 2, 回锅肉: 2, 华夫饼: 2, 酸辣粉: 1, 莴笋炒肉: 1, 莴笋汤: 0, 清蒸鲈鱼: 1, 番茄炒蛋: 1, 地三鲜: 2,
   粉蒸排骨: 1, 脆脆鲨: 2, 奥利奥: 2, 乐事: 2, 士力架: 2, 每日坚果: 1, 养乐多: 2, 可乐: 2, 猪肉脯: 2, 苏打饼干: 1, 溜溜梅: 2, 腌笃鲜: 2, 白灼虾: 1, 鱼香肉丝: 1,
+  // 血糖轴专项：精制主食黄/红、杂粮豆类绿、含糖饮料红
+  白粥: 2, 馒头: 2, 年糕: 2, 阳春面: 1, 西瓜: 1, 荔枝: 2, 杂粮饭: 0, 荞麦面: 0, 意大利面: 0, 糙米饭: 0, 米粉: 0,
   雪碧: 2, 营养快线: 2, 加多宝: 2, 红牛: 2, 鲜橙多: 2, 脉动: 2, 冰红茶: 2, 元气森林: 0, 东方树叶: 0, 三得利乌龙茶: 0, 豆浆: 0, 甜豆浆: 2, 矿泉水: 0, 无糖奶茶: 1, 外星人电解质水: 0, 星冰乐: 2, 速溶三合一咖啡: 2, 椰奶: 2, 巴黎水: 0, 维他柠檬茶: 2, 蜜雪冰城: 2 };
 for (const [k, want] of Object.entries(expect)) {
   const r = resolve(k);

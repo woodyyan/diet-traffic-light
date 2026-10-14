@@ -5,16 +5,24 @@
   var LV_COLOR = ["#3B6D11", "#BA7517", "#A32D2D"];
   var LV_FILL = ["#639922", "#EF9F27", "#E24B4A"];
   var VERDICT = [
-    { t: "放心吃", c: "#0F6E56", b: "#E1F5EE", tip: "三个指标都不构成负担，按正常份量吃" },
+    { t: "放心吃", c: "#0F6E56", b: "#E1F5EE", tip: "四个指标都不构成负担，按正常份量吃" },
     { t: "能吃，限量", c: "#854F0B", b: "#FAEEDA", tip: "可以吃，但必须按份量来，别放开吃" },
-    { t: "不建议吃", c: "#791F1F", b: "#FCEBEB", tip: "对你的三项指标有明显负担，忍一下" }
+    { t: "不建议吃", c: "#791F1F", b: "#FCEBEB", tip: "对你的指标有明显负担，忍一下" }
   ];
 
   // 默认用通用上限值，不含任何个人数据；用户可在设置里填自己的数值，只存本机
-  var LIMIT = { ua: 420, ldl: 3.4, tg: 1.7 };
-  var PROFILE_DEFAULT = { ua: LIMIT.ua, ldl: LIMIT.ldl, tg: LIMIT.tg, mode: "standard", custom: false };
+  var LIMIT = { ua: 420, ldl: 3.4, tg: 1.7, glu: 6.1 };
+  var PROFILE_DEFAULT = { ua: LIMIT.ua, ldl: LIMIT.ldl, tg: LIMIT.tg, glu: LIMIT.glu, mode: "standard", custom: false, gluOn: true };
   var stored = load("hf-profile", {});
-  var profile = { ua: stored.ua || PROFILE_DEFAULT.ua, ldl: stored.ldl || PROFILE_DEFAULT.ldl, tg: stored.tg || PROFILE_DEFAULT.tg, mode: stored.mode || "standard", custom: !!stored.custom };
+  var profile = {
+    ua: stored.ua || PROFILE_DEFAULT.ua,
+    ldl: stored.ldl || PROFILE_DEFAULT.ldl,
+    tg: stored.tg || PROFILE_DEFAULT.tg,
+    glu: stored.glu || PROFILE_DEFAULT.glu,
+    mode: stored.mode || "standard",
+    custom: !!stored.custom,
+    gluOn: stored.gluOn === undefined ? true : !!stored.gluOn
+  };
   var custom = load("hf-custom", {});
 
   function load(k, d) {
@@ -25,6 +33,29 @@
   // ---------- 判定引擎 ----------
   function flags(f) { return (f.f || "").split(/\s+/); }
 
+  // 库里没标 GI、但明显是精制主食的（阳春面、凉面、饭团、白粥配小菜…），默认按高 GI 处理
+  var STAPLE_RE = /面|米线|河粉|粉丝|粉条|羊肉粉|牛肉粉|肥肠粉|花甲粉|肠旺粉|酸辣粉|饭|粥|馒头|花卷|饼|糕|粽|汤圆|元宵|包子|烧麦|面包|吐司|点心|土豆|红薯|披萨|比萨|汉堡/;
+  var NO_GI_CATS = { veg: 1, fruit: 1, nut: 1, meat: 1, organ: 1, egg: 1, fish: 1, shellfish: 1, bean: 1, dairy: 1, drink: 1, oil: 1 };
+  function giOf(f) {
+    if (f.gi) return f.gi;
+    if (f.c === "grain") return 75;
+    if (NO_GI_CATS[f.c]) return 0;
+    return STAPLE_RE.test(f.n || "") ? 75 : 0;
+  }
+
+  // 血糖轴：升糖速度由「添加糖」和「GI」共同决定
+  // 低 GI（< 56）食物即便含天然糖也不冲血糖，所以降级处理
+  function gluOf(lv, gi, fl) {
+    var sug = lv[3] || 0, g = 0;
+    if (sug >= 2) g = 2;
+    else if (sug === 1) g = (gi > 0 && gi < 56) ? 0 : 1;
+    if (gi >= 85) g = Math.max(g, 2);
+    else if (gi >= 70) g = Math.max(g, 1);
+    if (fl.indexOf("sweet") >= 0) g = Math.max(g, 2);
+    if (fl.indexOf("alcohol") >= 0) g = Math.max(g, 1); // 酒类本身带碳水，且打乱血糖调节
+    return g;
+  }
+
   function axesOf(f) {
     var lv = f.lv || [0, 0, 0, 0, 0];
     var fl = flags(f);
@@ -32,16 +63,20 @@
     var meatSoup = fl.indexOf("soup_meat") >= 0;
     // LDL 受饱和脂肪的影响大于膳食胆固醇，所以胆固醇这一级权重降一档
     var ua = lv[0], chol = Math.max(lv[2], Math.max(0, lv[1] - 1)), tg = lv[3];
+    var gi = giOf(f);
     if (alcohol) { ua = 2; tg = 2; }
     if (meatSoup) { ua = Math.max(ua, 2); chol = Math.max(chol, 1); }
-    if (!alcohol && (f.gi || 0) >= 75 && tg === 0) tg = 1;
-    return { ua: ua, chol: chol, tg: tg, na: lv[4] };
+    if (!alcohol && gi >= 75 && tg === 0) tg = 1;
+    return { ua: ua, chol: chol, tg: tg, glu: gluOf(lv, gi, fl), na: lv[4], gi: gi, giKnown: !!f.gi };
   }
 
-  function levelOf(a) { return Math.max(a.ua, a.chol, a.tg); }
+  function levelOf(a) {
+    var g = profile.gluOn === false ? 0 : (a.glu || 0);
+    return Math.max(a.ua, a.chol, a.tg, g);
+  }
 
   function reasons(f, a) {
-    var r = [], fl = flags(f);
+    var r = [], fl = flags(f), lv = f.lv || [0, 0, 0, 0, 0];
     if (fl.indexOf("alcohol") >= 0) r.push("酒精在肾脏和尿酸抢排泄通道，血尿酸立刻升高，同时直接推高甘油三酯");
     else if (a.ua === 2) r.push("嘌呤高（> 150 mg/100 g），是尿酸最直接的食物来源");
     else if (a.ua === 1) r.push("嘌呤中等（50–150 mg/100 g），可以吃但要称重算量");
@@ -50,6 +85,15 @@
     else if (a.chol === 1) r.push("有一定饱和脂肪，放开吃会累到 LDL");
     if (a.tg === 2) r.push("糖或酒精很高，甘油三酯对这两样最敏感");
     else if (a.tg === 1) r.push("精制碳水或糖偏多，多余糖分会在肝脏转成甘油三酯");
+    if (a.glu === 2) {
+      if (a.giKnown && a.gi >= 85) r.push("升糖极快（GI 约 " + a.gi + "），餐后血糖会冲上去，胰岛素跟着大起大落");
+      else if (lv[3] >= 2) r.push("添加糖很多，餐后血糖会冲得很快，胰岛素跟着大起大落");
+      else r.push("精制主食 + 大量糖，血糖和甘油三酯一起被顶上去");
+    } else if (a.glu === 1) {
+      if (a.giKnown && a.gi >= 70) r.push("GI 约 " + a.gi + "，升糖偏快：配着蛋白和蔬菜吃、份量减半就稳得多");
+      else if (a.gi >= 70) r.push("精制主食升糖偏快：按主食算进这一餐的量，别再叠加第二份");
+      else r.push("有添加糖，控糖期要算进这一餐的碳水总量");
+    }
     if (fl.indexOf("soup_meat") >= 0) r.push("嘌呤和浮油都溶进了汤里，越熬越浓");
     if (fl.indexOf("fried") >= 0) r.push("油炸额外带来大量油脂和反复加热的油");
     if (fl.indexOf("processed") >= 0 || fl.indexOf("organ") >= 0) r.push("加工或内脏类食物，钠、嘌呤、胆固醇往往同时偏高");
@@ -61,11 +105,12 @@
     return [
       { k: "血尿酸", v: a.ua, sub: fmt("ua"), w: "UA" },
       { k: "坏胆固醇 LDL", v: a.chol, sub: fmt("ldl"), w: "LDL" },
-      { k: "甘油三酯", v: a.tg, sub: fmt("tg"), w: "TG" }
+      { k: "甘油三酯", v: a.tg, sub: fmt("tg"), w: "TG" },
+      { k: "血糖", v: profile.gluOn === false ? -1 : a.glu, sub: fmt("glu"), w: "GLU" }
     ];
   }
 
-  var UNIT = { ua: " μmol/L", ldl: " mmol/L", tg: " mmol/L" };
+  var UNIT = { ua: " μmol/L", ldl: " mmol/L", tg: " mmol/L", glu: " mmol/L" };
   function fmt(k) {
     var v = profile[k];
     return (profile.custom ? "你 " : "上限 ") + v + UNIT[k];
@@ -140,12 +185,13 @@
     } }
     if (!found.length) return null;
 
-    var base = [0, 0, 0, 0, 0], parts = [];
+    var base = [0, 0, 0, 0, 0], parts = [], gi = 0;
     found.forEach(function (word) {
       var r = search(word)[0];
       if (!r) return;
-      parts.push({ n: r.n, lv: r.lv, s: r.s, t: r.t });
+      parts.push({ n: r.n, lv: r.lv, s: r.s, t: r.t, gi: r.gi });
       for (var k = 0; k < 5; k++) base[k] = Math.max(base[k], r.lv[k] || 0);
+      if (r.gi) gi = Math.max(gi, r.gi);
     });
     if (!parts.length) return null;
 
@@ -162,7 +208,7 @@
       for (var k2 = 0; k2 < 5; k2++) base[k2] = Math.max(base[k2], clv[k2] || 0);
       tip = ct;
     }
-    return { n: q, c: "做法 + 食材自动拆解", lv: base, s: "按下面每一项分别控制", t: tip, parts: parts };
+    return { n: q, c: "做法 + 食材自动拆解", lv: base, gi: gi, s: "按下面每一项分别控制", t: tip, parts: parts };
   }
 
   function brandHit(q) {
@@ -172,7 +218,7 @@
       for (var j = 0; j < ks.length; j++) {
         if (q.indexOf(ks[j]) >= 0) {
           var b = window.BRANDS[i];
-          return { n: q, c: b.n, lv: b.lv, f: b.f, s: b.s, t: b.t, alt: b.alt, pack: true };
+          return { n: q, c: b.n, lv: b.lv, f: b.f, gi: b.gi, s: b.s, t: b.t, alt: b.alt, pack: true };
         }
       }
     }
@@ -186,7 +232,7 @@
       for (var j = 0; j < ks.length; j++) {
         if (q.indexOf(ks[j]) >= 0) {
           var c = window.CATS[i];
-          return { n: q, c: c.n, lv: c.lv, f: c.f, s: c.s, t: c.t, approx: c.n };
+          return { n: q, c: c.n, lv: c.lv, f: c.f, gi: c.gi, s: c.s, t: c.t, approx: c.n };
         }
       }
     }
@@ -204,9 +250,15 @@
   function axisHtml(a) {
     var out = '<div class="axes">';
     axisLabel(a).forEach(function (x) {
+      if (x.v < 0) {
+        out += '<div class="axe off"><div class="axe-top"><span class="axe-k">' + x.k + '</span>' +
+          '<span class="axe-v" style="color:#86868B">未计入</span></div>' +
+          '<div class="bar"></div><div class="axe-sub">设置里可以打开这一轴</div></div>';
+        return;
+      }
       out += '<div class="axe"><div class="axe-top"><span class="axe-k">' + x.k + '</span>' +
         '<span class="axe-v" style="color:' + LV_COLOR[x.v] + '">' + LV_NAME[x.v] + '负担</span></div>' +
-        bar(x.v) + '<div class="axe-sub">你的' + x.w + '：' + x.sub + '</div></div>';
+        bar(x.v) + '<div class="axe-sub">你的' + x.w + '：' + x.sub + (x.w === "GLU" ? "（空腹）" : "") + '</div></div>';
     });
     return out + '</div>';
   }
@@ -282,19 +334,25 @@
     if (!out) return;
     var sat = parseFloat($("satIn").value), sug = parseFloat($("sugIn").value), na = parseFloat($("naIn").value);
     var meaty = $("meatIn") && $("meatIn").checked;
+    var starchy = $("starchIn") && $("starchIn").checked;
     if (isNaN(sat) && isNaN(sug) && isNaN(na)) {
       out.innerHTML = '<div class="note">填任意一项就能算。拿不准就填饱和脂肪和糖这两项。</div>';
       return;
     }
     sat = isNaN(sat) ? 0 : sat; sug = isNaN(sug) ? 0 : sug; na = isNaN(na) ? 0 : na;
-    var a = window.packAxes(sat, sug, na, meaty);
+    var a = window.packAxes(sat, sug, na, meaty, starchy);
     var l = levelOf(a);
     var v = VERDICT[l];
     var why = [];
     if (a.chol === 2) why.push("饱和脂肪 " + sat + " g/100 g，超过上限（> 5 g）");
     else if (a.chol === 1) why.push("饱和脂肪 " + sat + " g/100 g，中等偏高（> 1.5 g）");
-    if (a.tg === 2) why.push("糖 " + sug + " g/100 g，超过上限（> 15 g）");
+    if (a.tg === 2) why.push("糖 " + sug + " g/100 g，超过上限（> 15 g）：甘油三酯和血糖一起被顶上去");
     else if (a.tg === 1) why.push("糖 " + sug + " g/100 g，中等偏高（> 5 g）");
+    if (a.glu === 2 || a.glu === 1) {
+      if (sug > 15) why.push("血糖轴：一份就吃进去 " + Math.round(sug) + " g 糖，餐后血糖会冲一下");
+      else if (starchy) why.push("血糖轴：是淀粉类主食，精制碳水升糖快，按主食算进这一餐的量");
+      else why.push("血糖轴：糖不算低，控糖期要把份量压住");
+    }
     if (a.na === 2) why.push("钠 " + na + " mg/100 g，超过上限（> 800 mg）");
     else if (a.na === 1) why.push("钠 " + na + " mg/100 g，中等偏高（> 400 mg）");
     if (meaty) why.push("配料里有肉粉 / 海鲜 / 酵母提取物，嘌呤要按中等算");
@@ -340,7 +398,7 @@
     var res = search(q);
     if (custom[q]) {
       var c = window.CATS[custom[q]];
-      res = [{ n: q, c: c.n, lv: c.lv, f: c.f, s: c.s, t: c.t }].concat(res);
+      res = [{ n: q, c: c.n, lv: c.lv, f: c.f, gi: c.gi, s: c.s, t: c.t }].concat(res);
     }
     if (res.length === 0) {
       var comp = compose(q);
@@ -409,19 +467,22 @@
   }
 
   function summary() {
-    if (!profile.custom) return "填上自己的数值后，这里会显示达标情况，每条食物的三条轴也会标上你的实测值。";
+    if (!profile.custom) return "填上自己的数值后，这里会显示达标情况，每条食物的四条轴也会标上你的实测值。";
     var overs = [];
     if (over("ua")) overs.push("尿酸");
     if (over("ldl")) overs.push("LDL");
     if (over("tg")) overs.push("甘油三酯");
-    if (!overs.length) return "三项都在标准内，继续保持：少酒、少糖、少内脏和浓汤。";
-    return overs.join("、") + " 偏高，饮食控制是最直接有效的手段。尿酸偏高时，酒、内脏、贝类和浓汤是优先级最高的禁区。";
+    if (over("glu")) overs.push("血糖");
+    if (!overs.length) return "四项都在标准内，继续保持：少酒、少糖、少精制主食、少内脏和浓汤。";
+    return overs.join("、") + " 偏高，饮食控制是最直接有效的手段。" +
+      (over("ua") ? "尿酸偏高时，酒、内脏、贝类和浓汤是优先级最高的禁区。" : "") +
+      (over("glu") ? "血糖偏高时，先把白米白面和含糖饮料换掉，见效最快。" : "");
   }
 
   function updateHeader() {
     var el = $("hdr");
     if (!el) return;
-    el.textContent = "UA " + profile.ua + " · LDL " + profile.ldl + " · TG " + profile.tg + "　" +
+    el.textContent = "UA " + profile.ua + " · LDL " + profile.ldl + " · TG " + profile.tg + " · GLU " + profile.glu + "　" +
       (profile.custom ? "能不能吃、吃多少、为什么" : "点 ≡ 填入你的体检数值");
   }
 
@@ -433,7 +494,7 @@
       (profile.custom ? '' :
         '<div class="guide">先在右上角 ≡ 里填入你的体检三项数值，判定会按你的实际情况显示。不填也能用，默认按通用上限值判断。数值只存在你这台设备上。</div>') +
       '<div class="sec-t">' + (profile.custom ? "你的指标" : "通用参考上限") + '</div><div class="metrics">' +
-      metric("血尿酸 UA", "ua") + metric("坏胆固醇 LDL", "ldl") + metric("甘油三酯 TG", "tg") +
+      metric("血尿酸 UA", "ua") + metric("坏胆固醇 LDL", "ldl") + metric("甘油三酯 TG", "tg") + metric("血糖 GLU", "glu") +
       '</div><div class="note">' + summary() + '</div>' +
       '<div class="sec-t">点一下试试</div><div class="quick">' +
       QUICK.map(function (q) { return '<button class="chip" data-q="' + q + '">' + q + '</button>'; }).join("") +
@@ -452,7 +513,16 @@
     $("closebtn").onclick = function () { $("sheet").classList.remove("show"); };
     $("modesel").value = profile.mode;
     $("modesel").onchange = function () { profile.mode = this.value; save("hf-profile", profile); renderQuery($("q").value.trim()); };
-    ["ua", "ldl", "tg"].forEach(function (k) {
+    var go = $("gluOnIn");
+    if (go) {
+      go.checked = profile.gluOn !== false;
+      go.onchange = function () {
+        profile.gluOn = this.checked;
+        save("hf-profile", profile);
+        renderQuery($("q").value.trim());
+      };
+    }
+    ["ua", "ldl", "tg", "glu"].forEach(function (k) {
       var el = $(k + "In");
       if (!el) return;
       el.value = profile[k];
@@ -476,8 +546,10 @@
       var el = $(id);
       if (el) el.addEventListener("input", renderPack);
     });
-    var mi = $("meatIn");
-    if (mi) mi.onchange = renderPack;
+    ["meatIn", "starchIn"].forEach(function (id) {
+      var el = $(id);
+      if (el) el.onchange = renderPack;
+    });
     renderPack();
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });

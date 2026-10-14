@@ -7,7 +7,7 @@ window.BRANDS = [
  alt:"85% 黑巧 1 小块、原味坚果 15 g、小番茄"},
 
 {k:"乐事,薯愿,品客,呀土豆,薯片,虾条,虾片,膨化,米多奇,馍片,旺旺,雪饼,仙贝,鲜贝,锅巴,爆米花,脆片,薯格",
- n:"薯片 / 膨化食品",lv:[0,0,2,0,2],s:"不吃；实在要吃 ≤ 20 g",
+ n:"薯片 / 膨化食品",lv:[0,0,2,0,2],gi:70,s:"不吃；实在要吃 ≤ 20 g",
  t:"油炸淀粉加盐，油脂和钠双高，而且一把接一把根本停不下来",
  alt:"原味坚果 15 g、黄瓜条、无糖爆米花（空气爆的）"},
 
@@ -41,7 +41,7 @@ window.BRANDS = [
  alt:"水煮蛋 1 个、无糖酸奶"},
 
 {k:"苏打饼干,消化饼,粗粮饼,全麦饼干,太平,梳打,猴头菇饼",
- n:"苏打饼 / 消化饼",lv:[0,0,1,0,2],s:"2–3 片",t:"比威化和夹心好得多，但起酥用油、钠也不低，别当减肥零食放开吃",
+ n:"苏打饼 / 消化饼",lv:[0,0,1,0,2],gi:70,s:"2–3 片",t:"比威化和夹心好得多，但起酥用油、钠也不低，别当减肥零食放开吃",
  alt:"全麦面包 1 片、燕麦 30 g"},
 
 {k:"海苔,波力,海苔卷,海苔脆",
@@ -58,10 +58,13 @@ window.BRANDS = [
  alt:"脱脂牛奶或无糖酸奶，可以每天喝"}
 ];
 
-// 包装食品按营养成分表判定：三项各算一档，取最严
-window.packAxes = function (sat, sug, na, meaty) {
+// 包装食品按营养成分表判定：各算一档，取最严
+// starchy = 是否属于主食/淀粉类（饼干、薯片、麦片、米粉…），这类即使不加糖也升糖快
+window.packAxes = function (sat, sug, na, meaty, starchy) {
   var lvSat = sat > 5 ? 2 : sat > 1.5 ? 1 : 0;
   var lvSug = sug > 15 ? 2 : sug > 5 ? 1 : 0;
   var lvNa = na > 800 ? 2 : na > 400 ? 1 : 0;
-  return { ua: meaty ? 1 : 0, chol: lvSat, tg: lvSug, na: lvNa };
+  var lvGlu = lvSug;
+  if (starchy) lvGlu = Math.max(lvGlu, 1);
+  return { ua: meaty ? 1 : 0, chol: lvSat, tg: lvSug, glu: lvGlu, na: lvNa };
 };
