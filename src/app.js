@@ -37,7 +37,9 @@
   var STAPLE_RE = /面|米线|河粉|粉丝|粉条|羊肉粉|牛肉粉|肥肠粉|花甲粉|肠旺粉|酸辣粉|饭|粥|馒头|花卷|饼|糕|粽|汤圆|元宵|包子|烧麦|面包|吐司|点心|土豆|红薯|披萨|比萨|汉堡/;
   var NO_GI_CATS = { veg: 1, fruit: 1, nut: 1, meat: 1, organ: 1, egg: 1, fish: 1, shellfish: 1, bean: 1, dairy: 1, drink: 1, oil: 1 };
   function giOf(f) {
-    if (f.gi) return f.gi;
+    if (typeof f.gi === "number") return f.gi;
+    // 新增菜式没有逐菜 GI 检测值；只用淀粉标签评估，不虚构 GI 75。
+    if (f.estimated) return 0;
     if (f.c === "grain") return 75;
     if (NO_GI_CATS[f.c]) return 0;
     return STAPLE_RE.test(f.n || "") ? 75 : 0;
@@ -67,7 +69,9 @@
     if (alcohol) { ua = 2; tg = 2; }
     if (meatSoup) { ua = Math.max(ua, 2); chol = Math.max(chol, 1); }
     if (!alcohol && gi >= 75 && tg === 0) tg = 1;
-    return { ua: ua, chol: chol, tg: tg, glu: gluOf(lv, gi, fl), na: lv[4], gi: gi, giKnown: !!f.gi };
+    var glu = gluOf(lv, gi, fl);
+    if (f.starchy) glu = Math.max(glu, 1);
+    return { ua: ua, chol: chol, tg: tg, glu: glu, na: lv[4], gi: gi, giKnown: typeof f.gi === "number" && f.gi > 0 };
   }
 
   function levelOf(a) {
@@ -78,11 +82,11 @@
   function reasons(f, a) {
     var r = [], fl = flags(f), lv = f.lv || [0, 0, 0, 0, 0];
     if (fl.indexOf("alcohol") >= 0) r.push("酒精在肾脏和尿酸抢排泄通道，血尿酸立刻升高，同时直接推高甘油三酯");
-    else if (a.ua === 2) r.push("嘌呤高（> 150 mg/100 g），是尿酸最直接的食物来源");
-    else if (a.ua === 1) r.push("嘌呤中等（50–150 mg/100 g），可以吃但要称重算量");
-    if (a.chol === 2) r.push("饱和脂肪高，是推高 LDL 的主因");
+    else if (a.ua === 2) r.push(f.estimated ? "按原料提示较高尿酸风险，尤其肝肾等内脏应谨慎选择；这是保守分级，不是该菜实测嘌呤含量" : "嘌呤高（> 150 mg/100 g），是尿酸最直接的食物来源");
+    else if (a.ua === 1) r.push(f.estimated ? (f.c === "veg" || f.c === "bean" ? "植物来源含有嘌呤，但不能等同动物内脏；按建议份量正常搭配，避免因分级盲目禁食" : "按常见原料估算有一定尿酸负担，份量计入同餐肉类或蛋白质食物总量") : "嘌呤中等（50–150 mg/100 g），可以吃但要称重算量");
+    if (a.chol === 2) r.push(f.estimated ? "按常见部位和做法估算脂肪负担较高；实际饱和脂肪取决于肥瘦比例、油种和用量" : "饱和脂肪高，是推高 LDL 的主因");
     else if (a.chol === 1 && (f.lv || [])[1] === 2) r.push("膳食胆固醇很高（> 200 mg/100 g），影响虽不如饱和脂肪，仍要数着个数吃");
-    else if (a.chol === 1) r.push("有一定饱和脂肪，放开吃会累到 LDL");
+    else if (a.chol === 1) r.push(f.estimated ? "按常见用料给出保守脂肪提醒，重点控制肥肉及总用油；少量植物油不等于实测饱和脂肪偏高" : "有一定饱和脂肪，放开吃会累到 LDL");
     if (a.tg === 2) r.push("糖或酒精很高，甘油三酯对这两样最敏感");
     else if (a.tg === 1) r.push("精制碳水或糖偏多，多余糖分会在肝脏转成甘油三酯");
     if (a.glu === 2) {
@@ -92,7 +96,7 @@
     } else if (a.glu === 1) {
       if (a.giKnown && a.gi >= 70) r.push("GI 约 " + a.gi + "，升糖偏快：配着蛋白和蔬菜吃、份量减半就稳得多");
       else if (a.gi >= 70) r.push("精制主食升糖偏快：按主食算进这一餐的量，别再叠加第二份");
-      else r.push("有添加糖，控糖期要算进这一餐的碳水总量");
+      else r.push(f.starchy ? "含淀粉，控糖要计入这一餐的碳水总量；低糖或不加糖不等于没有升糖影响，未提供实测 GI" : "按常见配方含糖，控糖期注意份量；实际血糖反应还取决于整餐碳水量及个体情况");
     }
     if (fl.indexOf("soup_meat") >= 0) r.push("嘌呤和浮油都溶进了汤里，越熬越浓");
     if (fl.indexOf("fried") >= 0) r.push("油炸额外带来大量油脂和反复加热的油");
@@ -138,9 +142,9 @@
     var hits = [];
     INDEX.forEach(function (it) {
       var best = -1;
-      it.keys.forEach(function (k) {
-        k = k.toLowerCase();
-        if (k === q) best = best < 0 ? 100 : best;
+      it.keys.forEach(function (k, ki) {
+        k = k.toLowerCase().replace(/\s+/g, "");
+        if (k === q) best = Math.max(best, ki === 0 ? 120 : 100);
         else if (k.indexOf(q) === 0) best = Math.max(best, 80 - k.length * 0.1);
         else if (k.indexOf(q) > 0) best = Math.max(best, 50);
       });
@@ -185,13 +189,15 @@
     } }
     if (!found.length) return null;
 
-    var base = [0, 0, 0, 0, 0], parts = [], gi = 0;
+    var base = [0, 0, 0, 0, 0], parts = [], gi = 0, starchy = false;
     found.forEach(function (word) {
-      var r = search(word)[0];
+      var candidates = search(word);
+      var r = exactHit(candidates, word) || candidates[0];
       if (!r) return;
-      parts.push({ n: r.n, lv: r.lv, s: r.s, t: r.t, gi: r.gi });
+      parts.push({ n: r.n, c: r.c, lv: r.lv, s: r.s, t: r.t, gi: r.gi, starchy: r.starchy, estimated: r.estimated });
       for (var k = 0; k < 5; k++) base[k] = Math.max(base[k], r.lv[k] || 0);
       if (r.gi) gi = Math.max(gi, r.gi);
+      if (r.starchy) starchy = true;
     });
     if (!parts.length) return null;
 
@@ -208,7 +214,7 @@
       for (var k2 = 0; k2 < 5; k2++) base[k2] = Math.max(base[k2], clv[k2] || 0);
       tip = ct;
     }
-    return { n: q, c: "做法 + 食材自动拆解", lv: base, gi: gi, s: "按下面每一项分别控制", t: tip, parts: parts };
+    return { n: q, c: "做法 + 食材自动拆解", lv: base, gi: gi, starchy: starchy, estimated: true, s: "按下面每一项分别控制", t: tip, parts: parts };
   }
 
   function brandHit(q) {
@@ -289,6 +295,7 @@
       '<div><div class="verdict-t" style="color:' + v.c + '">' + v.t + '</div>' +
       '<div class="verdict-s" style="color:' + v.c + '">' + esc(f.n) + ' · ' + v.tip + '</div></div></div>';
 
+    if (f.estimated) html += '<div class="approx">常见做法参考分级 · 不是逐菜营养检测值；实际用料、油盐糖和份量可能改变结果</div>';
     html += axisHtml(a);
 
     if (f.parts && f.parts.length) {
@@ -383,11 +390,13 @@
   }
 
   function exactHit(res, q) {
-    for (var i = 0; i < res.length; i++) {
-      var f = res[i];
-      if (f.n === q) return f;
-      var al = (f.al || "").split(",");
-      for (var j = 0; j < al.length; j++) if (al[j] === q) return f;
+    var norm = function (s) { return String(s || "").toLowerCase().replace(/\s+/g, ""); };
+    q = norm(q);
+    // 所有完整主名先找完，再找别名，避免早加载的别名抢走独立菜名。
+    for (var i = 0; i < res.length; i++) if (norm(res[i].n) === q) return res[i];
+    for (var k = 0; k < res.length; k++) {
+      var al = (res[k].al || "").split(",");
+      for (var j = 0; j < al.length; j++) if (norm(al[j]) === q) return res[k];
     }
     return null;
   }
@@ -504,6 +513,12 @@
   // ---------- 启动 ----------
   function init() {
     buildIndex();
+    var stats = $("libraryStats");
+    if (stats) {
+      var aliases = {};
+      INDEX.forEach(function (it) { it.keys.slice(1).forEach(function (k) { aliases[k] = true; }); });
+      stats.textContent = "菜名扩充版 2026.10.14 · " + INDEX.length + " 条预置食物 · " + Object.keys(aliases).length + " 个别名";
+    }
     $("out").innerHTML = emptyState();
     bindQuick();
     var qi = $("q");
@@ -562,7 +577,7 @@
     });
   }
 
-  window.__HF = { search: search, catFallback: catFallback, compose: compose, brandHit: brandHit, cookOf: cookOf, axesOf: axesOf, levelOf: levelOf, buildIndex: buildIndex, card: card, renderQuery: renderQuery, renderPack: renderPack, init: init, VERDICT: VERDICT };
+  window.__HF = { search: search, catFallback: catFallback, compose: compose, brandHit: brandHit, cookOf: cookOf, exactHit: exactHit, axesOf: axesOf, levelOf: levelOf, buildIndex: buildIndex, card: card, renderQuery: renderQuery, renderPack: renderPack, init: init, VERDICT: VERDICT };
 
   window.addEventListener("DOMContentLoaded", init);
 })();

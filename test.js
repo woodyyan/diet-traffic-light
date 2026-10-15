@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const src = path.join(__dirname, "src");
-const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "dishes.js", "packs.js", "app.js"];
+const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "foods-7.js", "foods-8.js", "dishes.js", "packs.js", "app.js"];
 const js = files.map((f) => fs.readFileSync(path.join(src, f), "utf8")).join("\n");
 
 const store = {};
@@ -19,7 +19,7 @@ const V = ["绿", "黄", "红"];
 // 与 app 判定顺序一致：库 → 做法+食材拆解 → 类别兜底
 function resolve(q) {
   const res = HF.search(q);
-  if (res.length) return { f: res[0], src: "库" };
+  if (res.length) return { f: HF.exactHit(res, q) || res[0], src: "库" };
   const comp = HF.compose(q);
   if (comp) return { f: comp, src: "拆解" };
   const br = HF.brandHit(q);
@@ -46,12 +46,13 @@ const bad = [];
 window.FOODS.forEach((f) => {
   if (!f.n || !f.lv || f.lv.length !== 5) bad.push(f.n + " lv异常");
   const a = HF.axesOf(f);
-  if (!(a.ua >= 0 && a.ua <= 2 && a.chol <= 2 && a.tg <= 2)) bad.push(f.n + " 轴越界");
+  if (![a.ua, a.chol, a.tg, a.glu, a.na].every((v) => Number.isInteger(v) && v >= 0 && v <= 2)) bad.push(f.n + " 轴越界");
+  if (!f.lv.every((v) => Number.isInteger(v) && v >= 0 && v <= 2)) bad.push(f.n + " 原始分级越界");
 });
 console.log("\n条目总数:", window.FOODS.length, "| 类别兜底:", window.CATS.length, "| 异常:", bad.length ? bad.join(", ") : "无");
 
 // 关键预期
-const expect = { 辣条: 2, 啤酒: 2, 猪肝: 2, 生蚝: 2, 果汁: 2, 米饭: 1, 豆腐: 0, 水: 0, 牛奶: 0, 牛肉面: 1, 鸡蛋: 1, 火锅: 1, 鸡胸肉: 1, 蛋黄: 2, 黄油: 2, 苹果: 1, 西兰花: 0,
+const expect = { 辣条: 2, 啤酒: 2, 猪肝: 2, 生蚝: 2, 果汁: 2, 米饭: 1, 豆腐: 0, 水: 0, 牛奶: 1, 牛肉面: 1, 鸡蛋: 1, 火锅: 1, 鸡胸肉: 1, 蛋黄: 2, 黄油: 2, 苹果: 1, 西兰花: 0,
   鸡汤: 2, 水煮肉片: 2, 回锅肉: 2, 华夫饼: 2, 酸辣粉: 1, 莴笋炒肉: 1, 莴笋汤: 0, 清蒸鲈鱼: 1, 番茄炒蛋: 1, 地三鲜: 2,
   粉蒸排骨: 1, 脆脆鲨: 2, 奥利奥: 2, 乐事: 2, 士力架: 2, 每日坚果: 1, 养乐多: 2, 可乐: 2, 猪肉脯: 2, 苏打饼干: 1, 溜溜梅: 2, 腌笃鲜: 2, 白灼虾: 1, 鱼香肉丝: 1,
   // 血糖轴专项：精制主食黄/红、杂粮豆类绿、含糖饮料红
@@ -63,4 +64,42 @@ for (const [k, want] of Object.entries(expect)) {
   const got = HF.levelOf(HF.axesOf(r.f));
   if (got !== want) { console.log(`  ✗ ${k} 期望${V[want]}灯 实际${V[got]}灯`); fails++; }
 }
-console.log(fails ? `\n${fails} 项判定与预期不符` : "\n关键判定全部符合预期");
+// 覆盖库质量门禁：主名唯一、别名唯一、所有完整主名和别名精确命中。
+const names = new Map(), aliases = new Map();
+for (const f of window.FOODS) {
+  if (names.has(f.n)) bad.push("主名重复：" + f.n);
+  names.set(f.n, f);
+  for (const al of (f.al || "").split(",").filter(Boolean)) {
+    if (aliases.has(al)) bad.push("别名重复：" + al);
+    aliases.set(al, f);
+  }
+  if (HF.search(f.n)[0] !== f || HF.exactHit(HF.search(f.n), f.n) !== f) bad.push("完整主名被抢：" + f.n);
+  const html = HF.card(f);
+  if ((html.match(/class="axe"/g) || []).length !== 4 || html.includes("undefined") || html.includes("NaN")) bad.push("渲染异常：" + f.n);
+}
+for (const [al, f] of aliases) {
+  const want = names.get(al) || f;
+  if (HF.exactHit(HF.search(al), al) !== want) bad.push("别名命中异常：" + al);
+}
+const newCases = { 卤肉: 2, 卤菜: 1, 猪头肉: 2, 猪耳朵: 1, 香菜: 0, 牛筋: 1, 毛肚: 2, 火腿肠: 1, 鸭头: 1,
+  卤牛筋: 1, 卤猪耳朵: 1, 猪舌: 1, 牛百叶: 2, 鸡胗: 2, 蒜苔: 0, 蒸芋头: 1, 芹菜炒百合: 1, 鸭肠: 2 };
+for (const [q, want] of Object.entries(newCases)) {
+  const f = names.get(q);
+  if (!f || resolve(q).f !== f || HF.levelOf(HF.axesOf(f)) !== want) bad.push("新增菜名判定：" + q);
+}
+for (const [q, name] of Object.entries({ 卤味: "卤菜", 口条: "猪舌", 卤猪耳: "卤猪耳朵", 牛腱子: "牛腱肉", 芫荽: "香菜", 牛蹄筋: "牛筋", 百叶: "豆腐皮" })) {
+  if (resolve(q).f.n !== name) bad.push("跨食材别名：" + q);
+}
+for (const q of ["卤肉", "卤菜", "猪头肉", "猪耳朵", "香菜", "牛筋", "毛肚", "火腿肠", "鸭头"]) {
+  const f = names.get(q), a = HF.axesOf(f);
+  console.log("新增精确命中:", q, "|", V[HF.levelOf(a)] + "灯", "|四轴", JSON.stringify(a), "|", f.s);
+}
+const comp = HF.compose("蒜苗炒牛筋");
+if (!comp || !comp.parts.some((p) => p.n === "牛筋") || !comp.parts.some((p) => p.n === "蒜苗")) bad.push("新主料拆解缺失");
+if (HF.axesOf(names.get("卤肉")).gi !== 0) bad.push("卤肉误套米饭GI");
+if (HF.axesOf(names.get("火腿肠")).glu < 1 || HF.axesOf(names.get("芹菜炒百合")).glu < 1) bad.push("淀粉控糖标签缺失");
+const extra = window.FOODS.filter((f) => f.estimated);
+console.log("\n独立食物:", names.size, "|唯一别名:", aliases.size, "|新增及更新参考分级:", extra.length);
+if (bad.length) console.log("质量门禁错误：", bad.join("；"));
+console.log(fails || bad.length ? `\n${fails + bad.length} 项检查未通过` : "\n关键判定与全库质量门禁全部通过");
+process.exitCode = fails || bad.length ? 1 : 0;

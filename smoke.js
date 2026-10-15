@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const src = path.join(__dirname, "src");
-const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "dishes.js", "packs.js", "app.js"];
+const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "foods-7.js", "foods-8.js", "dishes.js", "packs.js", "app.js"];
 const js = files.map((f) => fs.readFileSync(path.join(src, f), "utf8")).join("\n");
 
 function el(id) {
@@ -46,6 +46,10 @@ const latiao = run("辣条");
 run("牛肉面");
 run("xyz不存在的东西");
 run("");
+for (const q of ["卤肉", "卤菜", "猪头肉", "猪耳朵", "香菜", "牛筋", "毛肚", "火腿肠", "鸭头"]) {
+  const h = run(q);
+  if ((h.match(/class="axe"/g) || []).length !== 4 || h.includes("找到 ") || !h.includes("常见做法参考分级")) err++;
+}
 
 // 关键片段检查
 const checks = [
@@ -53,7 +57,7 @@ const checks = [
   ["火锅结论", hotpot.includes("能吃，限量")],
   ["辣条红灯", latiao.includes("不建议吃") && latiao.includes("实在要吃的话")],
   ["辣条原因", latiao.includes("油") && latiao.includes("钠")],
-  ["三轴渲染", latiao.includes("血尿酸") && latiao.includes("甘油三酯")],
+  ["四轴渲染", latiao.includes("血尿酸") && latiao.includes("甘油三酯") && latiao.includes("血糖") && (latiao.match(/class="axe"/g) || []).length === 4],
 ];
 checks.forEach(([n, ok]) => { console.log(`  ${ok ? "OK  " : "FAIL"} ${n}`); if (!ok) err++; });
 

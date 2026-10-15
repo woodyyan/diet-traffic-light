@@ -1,4 +1,4 @@
-var CACHE = "diet-light-v3";
+var CACHE = "diet-light-a1573f534e2f";
 var ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", function (e) {
