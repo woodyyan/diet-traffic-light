@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const src = path.join(__dirname, "src");
-const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "foods-7.js", "foods-8.js", "dishes.js", "packs.js", "app.js"];
+const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "foods-7.js", "foods-8.js", "foods-9.js", "dishes.js", "packs.js", "app.js"];
 const js = files.map((f) => fs.readFileSync(path.join(src, f), "utf8")).join("\n");
 
 const store = {};
@@ -98,6 +98,40 @@ const comp = HF.compose("蒜苗炒牛筋");
 if (!comp || !comp.parts.some((p) => p.n === "牛筋") || !comp.parts.some((p) => p.n === "蒜苗")) bad.push("新主料拆解缺失");
 if (HF.axesOf(names.get("卤肉")).gi !== 0) bad.push("卤肉误套米饭GI");
 if (HF.axesOf(names.get("火腿肠")).glu < 1 || HF.axesOf(names.get("芹菜炒百合")).glu < 1) bad.push("淀粉控糖标签缺失");
+// 奶类、麻薯、魔芋专项：独立入口、配方分离与无实测 GI 的控糖标签。
+const milkMochiKonjac = { 牛奶: 1, 纯牛奶: 1, 鲜牛奶: 1, 低脂牛奶: 0, 脱脂牛奶: 0,
+  无乳糖牛奶: 1, 低脂无乳糖牛奶: 0, 酸奶: 1, 原味酸奶: 1, 希腊酸奶: 1, 无糖酸奶: 1,
+  低脂无添加糖酸奶: 0, 全脂无添加糖酸奶: 1, 奶粉: 1, 脱脂奶粉: 0, 全脂奶粉: 2,
+  乳酸菌饮料: 2, 麻薯: 1, "无馅麻薯(不加糖)": 1, 红豆馅麻薯: 2, 奶油馅麻薯: 2,
+  麻薯面包: 1, 大福: 1, 雪媚娘: 2, 糍粑: 1, 糯米糍: 1, 驴打滚: 1, 糖油粑粑: 2,
+  魔芋: 0, 魔芋豆腐: 0, 魔芋丝: 0, 魔芋结: 0, 魔芋面: 0, 魔芋粉丝: 0,
+  混合淀粉魔芋面: 1, 魔芋素毛肚: 0, 魔芋爽: 1, 魔芋烧肉: 2,
+  魔芋米饭: 0, 混合谷物魔芋饭: 1, 无糖魔芋果冻: 0 };
+for (const [q, want] of Object.entries(milkMochiKonjac)) {
+  const f = names.get(q);
+  if (!f || HF.search(q)[0] !== f || HF.exactHit(HF.search(q), q) !== f || HF.levelOf(HF.axesOf(f)) !== want) bad.push("奶类麻薯魔芋判定：" + q);
+}
+for (const [q, name] of Object.entries({ 低脂奶: "低脂牛奶", 脱脂奶: "脱脂牛奶", 纯奶: "纯牛奶", 鲜奶: "鲜牛奶",
+  舒化奶: "无乳糖牛奶", 麻糬: "麻薯", mochi: "麻薯", 不加糖麻薯: "无馅麻薯(不加糖)",
+  蒟蒻: "魔芋", 魔芋面条: "魔芋面", 魔芋毛肚: "魔芋素毛肚", 无糖蒟蒻果冻: "无糖魔芋果冻" })) {
+  if (resolve(q).f.n !== name) bad.push("奶类麻薯魔芋别名：" + q);
+}
+for (const q of ["魔芋", "魔芋豆腐", "魔芋丝", "魔芋结", "魔芋面", "魔芋粉丝", "魔芋素毛肚", "魔芋米饭"]) {
+  const f = names.get(q), a = HF.axesOf(f);
+  if (f.c !== "veg" || f.starchy || a.glu !== 0 || a.gi !== 0 || a.giKnown || /加工或内脏类食物|嘌呤高（/.test(HF.card(f))) bad.push("纯加工魔芋误分类：" + q);
+  if (!f.t.includes("生魔芋不能直接食用")) bad.push("魔芋食品安全提醒缺失：" + q);
+}
+for (const q of ["无馅麻薯(不加糖)", "糍粑", "混合淀粉魔芋面", "混合谷物魔芋饭"]) {
+  const a = HF.axesOf(names.get(q));
+  if (a.glu < 1 || a.gi !== 0 || a.giKnown) bad.push("淀粉控糖或GI误生成：" + q);
+}
+const batch = {};
+new Function("window", fs.readFileSync(path.join(src, "foods-9.js"), "utf8"))(batch);
+if (batch.FOODS.length !== 93 || batch.FOODS.some((f) => !f.estimated || typeof f.gi === "number" || !f.s || !f.t)) bad.push("第九批数据质量异常");
+if (HF.card(names.get("奶油馅麻薯")).includes("餐后血糖会冲得很快") || HF.card(names.get("牛奶")).includes("重点控制肥肉")) bad.push("估算文案不适用");
+const highSodium = HF.axesOf(names.get("魔芋爽"));
+if (highSodium.na !== 2 || HF.levelOf(highSodium) !== 1) bad.push("钠误决定总灯色");
+console.log("奶类/麻薯/魔芋专项:", Object.keys(milkMochiKonjac).length, "个核心名称，第九批", batch.FOODS.length, "条");
 const extra = window.FOODS.filter((f) => f.estimated);
 console.log("\n独立食物:", names.size, "|唯一别名:", aliases.size, "|新增及更新参考分级:", extra.length);
 if (bad.length) console.log("质量门禁错误：", bad.join("；"));

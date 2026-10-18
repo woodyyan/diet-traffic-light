@@ -86,12 +86,12 @@
     else if (a.ua === 1) r.push(f.estimated ? (f.c === "veg" || f.c === "bean" ? "植物来源含有嘌呤，但不能等同动物内脏；按建议份量正常搭配，避免因分级盲目禁食" : "按常见原料估算有一定尿酸负担，份量计入同餐肉类或蛋白质食物总量") : "嘌呤中等（50–150 mg/100 g），可以吃但要称重算量");
     if (a.chol === 2) r.push(f.estimated ? "按常见部位和做法估算脂肪负担较高；实际饱和脂肪取决于肥瘦比例、油种和用量" : "饱和脂肪高，是推高 LDL 的主因");
     else if (a.chol === 1 && (f.lv || [])[1] === 2) r.push("膳食胆固醇很高（> 200 mg/100 g），影响虽不如饱和脂肪，仍要数着个数吃");
-    else if (a.chol === 1) r.push(f.estimated ? "按常见用料给出保守脂肪提醒，重点控制肥肉及总用油；少量植物油不等于实测饱和脂肪偏高" : "有一定饱和脂肪，放开吃会累到 LDL");
-    if (a.tg === 2) r.push("糖或酒精很高，甘油三酯对这两样最敏感");
-    else if (a.tg === 1) r.push("精制碳水或糖偏多，多余糖分会在肝脏转成甘油三酯");
+    else if (a.chol === 1) r.push(f.estimated ? (f.c === "dairy" ? "按普通乳脂或常见奶制品配方给出饱和脂肪提醒；无糖、无乳糖不等于低脂，实际以脂肪标签和份量为准" : "按常见用料给出保守脂肪提醒，重点控制肥肉及总用油；少量植物油不等于实测饱和脂肪偏高") : "有一定饱和脂肪，放开吃会累到 LDL");
+    if (a.tg === 2) r.push(f.estimated ? "按常见含糖配方给出较高糖负担提醒，具体糖量以配方或包装为准；注意全天糖和总能量摄入" : "糖或酒精很高，甘油三酯对这两样最敏感");
+    else if (a.tg === 1) r.push(f.estimated ? "糖档是配方参考，不是实测含量；核对是否添加糖及总碳水，避免大份量和叠加甜饮" : "精制碳水或糖偏多，多余糖分会在肝脏转成甘油三酯");
     if (a.glu === 2) {
       if (a.giKnown && a.gi >= 85) r.push("升糖极快（GI 约 " + a.gi + "），餐后血糖会冲上去，胰岛素跟着大起大落");
-      else if (lv[3] >= 2) r.push("添加糖很多，餐后血糖会冲得很快，胰岛素跟着大起大落");
+      else if (lv[3] >= 2) r.push(f.estimated ? "按常见加糖配方提示控糖风险，未提供实测 GI；餐后血糖还取决于摄入份量、整餐碳水及个体情况" : "添加糖很多，餐后血糖会冲得很快，胰岛素跟着大起大落");
       else r.push("精制主食 + 大量糖，血糖和甘油三酯一起被顶上去");
     } else if (a.glu === 1) {
       if (a.giKnown && a.gi >= 70) r.push("GI 约 " + a.gi + "，升糖偏快：配着蛋白和蔬菜吃、份量减半就稳得多");
@@ -101,7 +101,7 @@
     if (fl.indexOf("soup_meat") >= 0) r.push("嘌呤和浮油都溶进了汤里，越熬越浓");
     if (fl.indexOf("fried") >= 0) r.push("油炸额外带来大量油脂和反复加热的油");
     if (fl.indexOf("processed") >= 0 || fl.indexOf("organ") >= 0) r.push("加工或内脏类食物，钠、嘌呤、胆固醇往往同时偏高");
-    if (a.na === 2) r.push("钠很高，伤血管也伤肾，间接影响尿酸排出");
+    if (a.na === 2) r.push(f.estimated ? "按常见调味提示较高钠负担，应少用酱汁、核对包装，并控制全天盐摄入；钠单独提示，不直接决定四轴总灯色" : "钠很高，伤血管也伤肾，间接影响尿酸排出");
     return r;
   }
 
@@ -464,8 +464,6 @@
 
   var CAT_CN = { grain: "主食", meat: "肉", organ: "内脏", egg: "蛋", fish: "鱼", shellfish: "海鲜", bean: "豆制品", veg: "蔬菜", fruit: "水果", dairy: "奶", nut: "坚果", drink: "饮料", snack: "零食", oil: "调味油脂", soup: "汤", dish: "菜式", processed: "加工食品" };
 
-  var QUICK = ["牛肉面", "火锅", "辣条", "鸡蛋", "啤酒", "水果", "米饭", "炒菜", "豆腐", "虾", "牛奶", "串串"];
-
   function metric(label, k) {
     var v = profile[k];
     var o = over(k);
@@ -501,13 +499,10 @@
       '<div class="verdict-t" style="color:#0C447C">输入食物名，立刻告诉你能不能吃</div>' +
       '<div class="verdict-s" style="color:#185FA5">支持中文名、别名、拼音首字母，比如「nrM」也能搜到牛肉面</div></div></div>' +
       (profile.custom ? '' :
-        '<div class="guide">先在右上角 ≡ 里填入你的体检三项数值，判定会按你的实际情况显示。不填也能用，默认按通用上限值判断。数值只存在你这台设备上。</div>') +
+        '<div class="guide">可在右上角 ≡ 里填入体检四项数值，用于显示达标情况；食物灯色仍按通用参考规则给出，不自动随化验值调整。不填也能用，数值只存在这台设备上。</div>') +
       '<div class="sec-t">' + (profile.custom ? "你的指标" : "通用参考上限") + '</div><div class="metrics">' +
       metric("血尿酸 UA", "ua") + metric("坏胆固醇 LDL", "ldl") + metric("甘油三酯 TG", "tg") + metric("血糖 GLU", "glu") +
-      '</div><div class="note">' + summary() + '</div>' +
-      '<div class="sec-t">点一下试试</div><div class="quick">' +
-      QUICK.map(function (q) { return '<button class="chip" data-q="' + q + '">' + q + '</button>'; }).join("") +
-      '</div></div>';
+      '</div><div class="note">' + summary() + '</div></div>';
   }
 
   // ---------- 启动 ----------
@@ -517,10 +512,9 @@
     if (stats) {
       var aliases = {};
       INDEX.forEach(function (it) { it.keys.slice(1).forEach(function (k) { aliases[k] = true; }); });
-      stats.textContent = "菜名扩充版 2026.10.14 · " + INDEX.length + " 条预置食物 · " + Object.keys(aliases).length + " 个别名";
+      stats.textContent = "奶类·麻薯·魔芋扩充版 2026.10.18 · " + INDEX.length + " 条预置食物 · " + Object.keys(aliases).length + " 个别名";
     }
     $("out").innerHTML = emptyState();
-    bindQuick();
     var qi = $("q");
     qi.addEventListener("input", function () { renderQuery(qi.value.trim()); });
     qi.addEventListener("keydown", function (e) { if (e.key === "Enter") { qi.blur(); renderQuery(qi.value.trim()); } });
@@ -569,12 +563,6 @@
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
     }
-  }
-
-  function bindQuick() {
-    Array.prototype.forEach.call(document.querySelectorAll(".chip[data-q]"), function (b) {
-      b.onclick = function () { $("q").value = b.getAttribute("data-q"); renderQuery($("q").value); };
-    });
   }
 
   window.__HF = { search: search, catFallback: catFallback, compose: compose, brandHit: brandHit, cookOf: cookOf, exactHit: exactHit, axesOf: axesOf, levelOf: levelOf, buildIndex: buildIndex, card: card, renderQuery: renderQuery, renderPack: renderPack, init: init, VERDICT: VERDICT };

@@ -54,7 +54,6 @@ input#q:focus{border-color:#378ADD}
 .note{font-size:14px;color:#1D1D1F;background:#F5F5F7;border-radius:12px;padding:12px 14px}
 .note.alt{background:#E6F1FB}
 .approx{font-size:12px;color:#854F0B;background:#FAEEDA;border-radius:8px;padding:8px 10px;margin-bottom:12px}
-.quick{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:#fff;border:.5px solid #D2D2D7;border-radius:999px;padding:7px 13px;font-size:13px;color:#1D1D1F;cursor:pointer}
 .chip:active{background:#F5F5F7}
 .chip.sm{font-size:12px;padding:5px 10px;margin:4px 4px 0 0}
@@ -106,7 +105,7 @@ footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-he
     <div class="sh-row"><span>空腹血糖 GLU（mmol/L）</span><input class="num" id="gluIn" type="number" step="0.01" inputmode="decimal"></div>
     <div class="sh-row"><span>把血糖轴计入总判定</span><input type="checkbox" id="gluOnIn"></div>
     <div class="disclaim">
-      参考上限：UA 420 μmol/L、LDL 3.4 mmol/L、TG 1.7 mmol/L、空腹血糖 6.1 mmol/L。填了数值后，每条食物的四条轴会标上你的实测值。<br>
+      参考上限：UA 420 μmol/L、LDL 3.4 mmol/L、TG 1.7 mmol/L、空腹血糖 6.1 mmol/L。填了数值后，四条轴会标上实测值，并显示达标情况；食物分级仍按通用规则，不自动随化验值调整。<br>
       血糖轴看的是升糖速度（添加糖 + 升糖指数 GI）：白米白面和含糖饮料会亮黄或红灯，杂粮、豆类和大多数蔬菜还是绿灯。介意主食被判黄灯的话，可以把上面「血糖轴计入总判定」关掉，四条轴依然显示，只是不参与总红绿灯。<br>
       这些数值和你的查询记录都只存在这台设备上，不上传、不同步。<br>
       判定依据：常见食物分类及《成人高尿酸血症与痛风食养指南（2024年版）》等食养原则。新增菜式明确标为「常见做法参考分级」：没有逐菜营养检测值，实际部位、配方、油盐糖和份量可能改变结果。<br>
@@ -142,7 +141,7 @@ footer{padding:6px 0 30px;font-size:11px;color:#86868B;text-align:center;line-he
       <label class="pack-chk"><input type="checkbox" id="meatIn"> 配料里有肉粉 / 海鲜 / 酵母提取物 / 肉松</label>
       <label class="pack-chk"><input type="checkbox" id="starchIn"> 是主食 / 淀粉类（饼干、薯片、麦片、米粉、面包）</label>
       <div id="packout" style="margin-top:12px"></div>
-      <div class="pack-note" style="margin-top:10px">判据：饱和脂肪 &gt; 5 g、糖 &gt; 15 g、钠 &gt; 800 mg，任一项即红灯；过半即黄灯。糖同时也进血糖轴，勾了淀粉类再升一档</div>
+      <div class="pack-note" style="margin-top:10px">每 100 g 规则：饱和脂肪 &gt; 5 g 为高、&gt; 1.5 g 为中；糖 &gt; 15 g 为高、&gt; 5 g 为中；钠 &gt; 800 mg 为高、&gt; 400 mg 为中。钠单独警示，不决定总灯色；淀粉类使控糖至少黄档。未填写的项目不能视为已检测为零，结果仅供参考</div>
     </div>
   </div>
 

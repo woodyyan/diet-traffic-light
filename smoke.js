@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const src = path.join(__dirname, "src");
-const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "foods-7.js", "foods-8.js", "dishes.js", "packs.js", "app.js"];
+const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "foods-7.js", "foods-8.js", "foods-9.js", "dishes.js", "packs.js", "app.js"];
 const js = files.map((f) => fs.readFileSync(path.join(src, f), "utf8")).join("\n");
 
 function el(id) {
@@ -45,14 +45,22 @@ const hotpot = run("火锅");
 const latiao = run("辣条");
 run("牛肉面");
 run("xyz不存在的东西");
-run("");
+const home = run("");
 for (const q of ["卤肉", "卤菜", "猪头肉", "猪耳朵", "香菜", "牛筋", "毛肚", "火腿肠", "鸭头"]) {
   const h = run(q);
   if ((h.match(/class="axe"/g) || []).length !== 4 || h.includes("找到 ") || !h.includes("常见做法参考分级")) err++;
 }
 
+for (const q of ["牛奶", "麻薯", "魔芋", "低脂牛奶", "酸奶", "无糖酸奶", "雪媚娘", "魔芋爽", "魔芋面", "混合淀粉魔芋面"]) {
+  const h = run(q);
+  if ((h.match(/class="axe"/g) || []).length !== 4 || h.includes("找到 ") || h.includes("库里没有") || !h.includes("常见做法参考分级")) err++;
+}
+const appSource = fs.readFileSync(path.join(src, "app.js"), "utf8");
 // 关键片段检查
 const checks = [
+  ["首页试用入口已移除", !/点一下试试|data-q=|class="quick"/.test(home) && !/QUICK|bindQuick/.test(appSource)],
+  ["首页四指标保留", (home.match(/class="metric"/g) || []).length === 4 && home.includes("通用参考上限")],
+  ["类别归属按钮保留", run("xyz不存在的东西").includes("data-cat=")],
   ["火锅拆解", hotpot.includes("锅底汤") && hotpot.includes("蘸料")],
   ["火锅结论", hotpot.includes("能吃，限量")],
   ["辣条红灯", latiao.includes("不建议吃") && latiao.includes("实在要吃的话")],

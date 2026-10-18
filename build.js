@@ -5,7 +5,7 @@ const crypto = require("crypto");
 
 const src = path.join(__dirname, "src");
 const dist = path.join(__dirname, "dist");
-const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "foods-7.js", "foods-8.js", "dishes.js", "packs.js", "app.js"];
+const files = ["foods-1.js", "foods-2.js", "foods-3.js", "foods-4.js", "foods-5.js", "foods-6.js", "foods-7.js", "foods-8.js", "foods-9.js", "dishes.js", "packs.js", "app.js"];
 
 if (!fs.existsSync(dist)) fs.mkdirSync(dist, { recursive: true });
 
